@@ -72,7 +72,7 @@ jobs:
         run: make -C launcher
       - name: Behaviour tests under Wine
         run: make -C launcher wine-test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: launcher
           path: launcher/build/launcher.exe
