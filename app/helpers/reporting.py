@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
-from .models import AnalysisReport, Finding, MediaMetadata, PlatformResult
+from .models import AnalysisReport, MediaMetadata, PlatformResult
 
 
 def human_size(value: int) -> str:

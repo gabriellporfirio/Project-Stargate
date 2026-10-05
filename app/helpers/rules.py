@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from .context import PlaybackContext, SCALA_ENGINES, DISE_PLAYERS, DISE_VERSIONS
-from .models import Finding, MediaMetadata, PlatformResult, Status
+from .models import Finding, PlatformResult, Status
 
 DISE_SOURCE = (
     "Dise Media Format Guidelines, 15 July 2026; Premium & Lite, 29 April 2025"
