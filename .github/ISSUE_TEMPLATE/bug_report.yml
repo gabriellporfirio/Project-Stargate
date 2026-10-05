@@ -1,0 +1,40 @@
+name: Bug report
+description: A file was checked incorrectly, or the app misbehaved
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did the app show instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: media-type
+    attributes:
+      label: File type
+      options:
+        - Video
+        - Image
+        - Audio
+        - PDF
+        - Not file-specific
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Player and layout
+      description: The Player and Layout selected in the app (or the CLI flags used)
+      placeholder: "PC — Scala + Dise · HD landscape"
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: "From `Pixel Media Checker.exe --version`, or the release you downloaded"
+  - type: textarea
+    id: report
+    attributes:
+      label: Report or details
+      description: Paste the "Show details" text or `--check FILE --json` output. Remove client-identifying paths if needed.
+      render: text

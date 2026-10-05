@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build output (portable bundle, launcher objects)
+/build/
+/dist/
+/launcher/build/
+*.o
+*.res
+*.exe
+
+# Third-party binaries are fetched at build time, never committed
+/app/tools/
+_runtime/
+
+# OS and editor files
+.DS_Store
+__MACOSX/
+._*
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

@@ -1,0 +1,17 @@
+name: Feature or rule request
+description: Suggest a new check, player profile, layout or app improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: For rule changes, link or quote the Scala / Dise guidance it is based on.
+    validations:
+      required: true
