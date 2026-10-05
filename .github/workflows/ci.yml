@@ -55,3 +55,25 @@ jobs:
       - name: Run tests (virtual display for the Tk smoke tests)
         if: runner.os == 'Linux'
         run: xvfb-run -a python -m pytest
+
+  launcher:
+    name: Launcher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MinGW-w64 and Wine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64 wine wine64
+      - name: Command-line quoting tests
+        run: make -C launcher test
+      - name: Build
+        run: make -C launcher
+      - name: Behaviour tests under Wine
+        run: make -C launcher wine-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher
+          path: launcher/build/launcher.exe
+          if-no-files-found: error
