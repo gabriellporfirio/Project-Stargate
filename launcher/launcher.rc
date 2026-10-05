@@ -1,0 +1,34 @@
+#include <windows.h>
+#include "src/version.h"
+
+1 ICON "../app/assets/pixel.ico"
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "launcher.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     PMC_VERSION_MAJOR, PMC_VERSION_MINOR, PMC_VERSION_PATCH, 0
+PRODUCTVERSION  PMC_VERSION_MAJOR, PMC_VERSION_MINOR, PMC_VERSION_PATCH, 0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "CompanyName", "Pixel Inspiration"
+            VALUE "FileDescription", "Pixel Media Checker - Scala and Dise compatibility checker"
+            VALUE "FileVersion", PMC_VERSION_STRING
+            VALUE "InternalName", "PixelMediaQA"
+            VALUE "OriginalFilename", "Pixel Media Checker.exe"
+            VALUE "ProductName", "Pixel Media Checker"
+            VALUE "ProductVersion", PMC_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0809, 1200
+    END
+END
