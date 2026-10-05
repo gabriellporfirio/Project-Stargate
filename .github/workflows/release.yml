@@ -1,0 +1,92 @@
+name: Release
+
+# Builds the portable Windows folder and smoke-tests it on Windows.
+#   - pull requests that touch the build: build and test only
+#   - manual run: build, test and keep the zip as a workflow artifact
+#   - tag vX.Y.Z: also publish the zip as a GitHub release
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "packaging/**"
+      - "launcher/**"
+      - "requirements.txt"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Python bundled in _runtime. The launcher expects Tcl/Tk 8.6 (Python 3.12).
+  PYTHON_VERSION: "3.12"
+  # Windows FFmpeg build that ffprobe.exe is taken from (https://www.gyan.dev/ffmpeg/builds/).
+  # When changing the URL, update the checksum too; the build prints the new one.
+  FFMPEG_URL: https://github.com/GyanD/codexffmpeg/releases/download/7.1.1/ffmpeg-7.1.1-essentials_build.zip
+  FFMPEG_SHA256: 04861d3339c5ebe38b56c19a15cf2c0cc97f5de4fa8910e4d47e5e6404e4a2d4
+
+jobs:
+  launcher:
+    name: Build launcher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MinGW-w64
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+      - run: make -C launcher
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher
+          path: launcher/build/launcher.exe
+          if-no-files-found: error
+
+  bundle:
+    name: Build and test portable folder
+    needs: launcher
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: launcher
+          path: launcher/build
+      - name: Build
+        run: >-
+          python packaging/build_portable.py --zip
+          --ffprobe-url "${{ env.FFMPEG_URL }}"
+          --ffprobe-sha256 "${{ env.FFMPEG_SHA256 }}"
+          --expect-version "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+      - name: Smoke test
+        run: python packaging/smoke_test.py "dist/Pixel Media Checker"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portable-build
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish release
+    if: github.ref_type == 'tag'
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: portable-build
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}" *.zip
+          --repo "${{ github.repository }}"
+          --title "Pixel Media Checker ${{ github.ref_name }}"
+          --generate-notes
