@@ -42,12 +42,16 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements*.txt
-      - name: Install ffprobe
+      - name: Install ffprobe and a virtual display
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg xvfb
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Run tests
+        if: runner.os != 'Linux'
         run: python -m pytest
+      - name: Run tests (virtual display for the Tk smoke tests)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python -m pytest
