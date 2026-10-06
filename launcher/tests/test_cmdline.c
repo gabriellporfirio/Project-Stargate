@@ -1,4 +1,4 @@
-/* Host-side tests for the launcher's command-line quoting. */
+/* Host-side tests for the launcher's argument quoting. */
 #include <stdio.h>
 #include <wchar.h>
 

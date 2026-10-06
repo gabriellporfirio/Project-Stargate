@@ -10,7 +10,7 @@
 
 - [ ] `ruff check .`
 - [ ] `pytest`
-- [ ] Checked in the Windows portable build (desktop app or `--check`), if behaviour changed
+- [ ] Checked in the Windows portable build (desktop app), if behaviour changed
 
 ## Notes for reviewers
 

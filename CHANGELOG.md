@@ -8,6 +8,13 @@ the version is set.
 
 ## [Unreleased]
 
+### Removed
+
+- The command-line mode: `--check`, `--json`, the playback flags and
+  `--version`. The app is desktop-only; the launcher always opens the
+  desktop window, and a file dropped onto it is checked straight away.
+  This also removes the `--runtime-check` usage error listed under 1.0.
+
 ## [1.0] - 2026-10-06
 
 The first version: the app as it was already in use, now built from this

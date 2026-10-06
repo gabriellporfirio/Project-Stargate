@@ -25,16 +25,16 @@ body:
     id: setup
     attributes:
       label: Player and layout
-      description: The Player and Layout selected in the app (or the CLI flags used)
+      description: The Player and Layout selected in the app
       placeholder: "PC — Scala + Dise · HD landscape"
   - type: input
     id: version
     attributes:
       label: App version
-      description: "From `Pixel Media Checker.exe --version`, or the release you downloaded"
+      description: "The release you downloaded, or right-click Pixel Media Checker.exe → Properties → Details → File version"
   - type: textarea
     id: report
     attributes:
       label: Report or details
-      description: Paste the "Show details" text or `--check FILE --json` output. Remove client-identifying paths if needed.
+      description: Paste the "Show details" text from the app. Remove client-identifying paths if needed.
       render: text

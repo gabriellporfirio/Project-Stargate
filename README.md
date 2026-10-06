@@ -29,25 +29,6 @@ installing.
 3. Read the verdict per file; **Show details** lists each issue with the
    detected and expected values and the file's properties.
 
-### Command line
-
-```text
-"Pixel Media Checker.exe" --check FILE [--json] [--platform both|scala|dise]
-    [--scala-engine unknown|win32|win64|other]
-    [--dise-version general|unknown|one|legacy]
-    [--dise-player unknown|pc|soc|samsung|lg|other]
-    [--pdf-workflow unknown|composer] [--size WIDTHxHEIGHT] [--multi-video]
-```
-
-Exit codes: `0` pass, `1` review, `2` fail, `3` could not check. Defaults
-match the *PC — Scala + Dise* preset. The launcher is a Windows GUI program,
-so to see the report in the current terminal run the bundled interpreter
-directly:
-
-```powershell
-_runtime\python.exe _app\app.py --check "C:\Media\promo.mp4" --size 5760x1080
-```
-
 ## Repository layout
 
 | Path | Contents |
@@ -72,7 +53,6 @@ pip install -r requirements-dev.txt
 pytest
 ruff check .
 python app/app.py               # desktop app
-python app/app.py --check FILE  # headless check
 ```
 
 The launcher builds with MinGW-w64: `make -C launcher`, with tests via
