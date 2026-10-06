@@ -57,7 +57,8 @@ _runtime\python.exe _app\app.py --check "C:\Media\promo.mp4" --size 5760x1080
 | [`launcher/`](launcher) | C source for `Pixel Media Checker.exe` |
 | [`packaging/`](packaging) | Assembles and smoke-tests the portable folder |
 | [`tests/`](tests) | pytest suite (sample media is generated at test time) |
-| [`docs/`](docs) | [Architecture](docs/architecture.md), [checks reference](docs/checks.md), [building and releasing](docs/building.md) |
+| [`docs/`](docs) | [Architecture](docs/architecture.md), [checks reference](docs/checks.md), [building and releasing](docs/building.md), [design language](docs/design/) |
+| [`CLAUDE.md`](CLAUDE.md) | Code, design and process standards for every change |
 
 ## Development
 

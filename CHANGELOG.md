@@ -17,6 +17,8 @@ All notable changes are recorded here. The format follows
 - CI on Windows and Linux; a release workflow that builds, smoke-tests and
   publishes the portable zip.
 - Documentation: architecture, checks reference, building and releasing.
+- `CLAUDE.md` with the project's code, design and process standards, and the
+  company design language (`docs/design/`) that the desktop app follows.
 
 ### Known issues
 

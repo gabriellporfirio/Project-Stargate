@@ -1,5 +1,8 @@
 # Contributing
 
+The coding, design and process standards for this project are in
+[CLAUDE.md](CLAUDE.md); please read it first. This page is the quick version.
+
 ## Workflow
 
 1. Branch from `main` (`feature/…`, `fix/…`, `docs/…`).
