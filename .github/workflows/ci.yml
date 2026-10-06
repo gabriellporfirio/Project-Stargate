@@ -18,7 +18,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -35,7 +35,7 @@ jobs:
         # The portable build targets Windows; Linux also covers the ffprobe path.
         os: [windows-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           # Must match the Python bundled in _runtime.
@@ -60,7 +60,7 @@ jobs:
     name: Launcher
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install MinGW-w64 and Wine
         run: |
           sudo apt-get update
@@ -72,7 +72,7 @@ jobs:
         run: make -C launcher
       - name: Behaviour tests under Wine
         run: make -C launcher wine-test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: launcher
           path: launcher/build/launcher.exe
