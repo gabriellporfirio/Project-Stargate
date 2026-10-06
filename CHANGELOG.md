@@ -8,10 +8,10 @@ the version is set.
 
 ## [Unreleased]
 
-## [1.0]
+## [1.0] - 2026-10-06
 
 The first version: the app as it was already in use, now built from this
-repository. Add the release date to this heading when `v1.0` is tagged.
+repository.
 
 ### Features
 
