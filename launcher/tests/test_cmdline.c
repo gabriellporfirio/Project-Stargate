@@ -1,4 +1,4 @@
-/* Host-side tests for the launcher's command-line quoting. */
+/* Host-side tests for the launcher's argument quoting. */
 #include <stdio.h>
 #include <wchar.h>
 
@@ -40,12 +40,12 @@ static void test_building_a_command(void)
 {
     wchar_t cmd[256];
     size_t len = 0;
-    const wchar_t *expected = L"\"python.exe\" \"app.py\" \"--check\" \"my clip.mp4\"";
-    int ok = cmdline_append_quoted(cmd, 256, &len, L"python.exe") &&
+    const wchar_t *expected = L"\"pythonw.exe\" \"app.py\" \"C:\\Media\" \"my clip.mp4\"";
+    int ok = cmdline_append_quoted(cmd, 256, &len, L"pythonw.exe") &&
              cmdline_append_char(cmd, 256, &len, L' ') &&
              cmdline_append_quoted(cmd, 256, &len, L"app.py") &&
              cmdline_append_char(cmd, 256, &len, L' ') &&
-             cmdline_append_quoted(cmd, 256, &len, L"--check") &&
+             cmdline_append_quoted(cmd, 256, &len, L"C:\\Media") &&
              cmdline_append_char(cmd, 256, &len, L' ') &&
              cmdline_append_quoted(cmd, 256, &len, L"my clip.mp4");
     if (!ok || wcscmp(cmd, expected) != 0) {

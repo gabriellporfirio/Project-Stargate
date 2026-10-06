@@ -16,7 +16,7 @@ folder: `Pixel Media Checker.exe` (launcher) + `_app/` (this repo's `app/`)
 | `app/` | Python application. Ships as `_app/`; run from inside it |
 | `app/helpers/` | `probe` (reads files) → `rules` (decides) → `reporting` (formats); `context`, `models`, `analyzer` |
 | `app/desktop.py`, `appearance.py`, `workflow.py`, `presets.py` | Tk desktop app, its theme, batch logic, player/layout presets |
-| `app/app.py`, `cli.py` | Entry point and `--check` command line |
+| `app/app.py` | Entry point: opens the desktop app (no command-line mode) |
 | `launcher/` | C source for `Pixel Media Checker.exe` (MinGW-w64) |
 | `packaging/` | Builds and smoke-tests the portable folder |
 | `tests/` | pytest suite; sample media is generated at test time |
@@ -29,7 +29,6 @@ pip install -r requirements-dev.txt     # Python 3.12
 ruff check .                            # must pass
 pytest                                  # xvfb-run -a pytest on headless Linux
 python app/app.py                       # desktop app
-python app/app.py --check FILE [--json] # headless check; exit 0 pass, 1 review, 2 fail, 3 error
 make -C launcher                        # build the launcher (needs MinGW-w64)
 make -C launcher test wine-test         # launcher tests (wine-test needs Wine)
 ```
@@ -66,12 +65,15 @@ Build and release: [docs/building.md](docs/building.md).
 
 - Keep the pipeline in one direction: `probe` produces `MediaMetadata`;
   `rules` turn metadata plus a `PlaybackContext` into `Finding`s;
-  `reporting` and `workflow` turn findings into words. The UI and CLI never
-  make rule decisions, and rules never format text for a particular screen.
+  `reporting` and `workflow` turn findings into words. The UI never makes
+  rule decisions, and rules never format text for a particular screen.
 - Model data with dataclasses. Configuration-like objects are frozen and
   validate themselves in `__post_init__` (see `PlaybackContext`), raising
   `ValueError` with a message a user could act on.
 - Add new player profiles and layouts in `presets.py`, not in the UI.
+- The app is **desktop-only**: no command-line mode, flags or console
+  output. A file passed by the launcher (dropped onto it or opened with it)
+  is the only argument, and it opens in the desktop app.
 - Prefer small private helpers (`_name`) over deep class hierarchies;
   follow the existing module's style.
 
@@ -82,7 +84,7 @@ Build and release: [docs/building.md](docs/building.md).
   incomplete or damaged. Export a new copy.").
 - Raise `EngineError` when the **app** is the problem (a reader is missing
   or crashed).
-- Catch broad exceptions only at boundaries (CLI, batch loop, worker, Tk
+- Catch broad exceptions only at boundaries (batch loop, worker, Tk
   callbacks). There, log the detail with `logging.exception` and show a
   plain message. Users never see a traceback.
 - Run native readers (Pillow, pypdf, PyAV) in the isolated worker process
@@ -116,8 +118,8 @@ Build and release: [docs/building.md](docs/building.md).
 
 ### Launcher (C)
 
-- C11, compiled with `-Wall -Wextra -Werror`. Its behaviour (interpreter
-  choice, environment, exit codes 10–16) is a contract documented in
+- C11, compiled with `-Wall -Wextra -Werror`. Its behaviour (always
+  `pythonw.exe`, environment, exit codes 10–16) is a contract documented in
   [launcher/README.md](launcher/README.md) and checked by
   `launcher/tests/wine_test.py`. Change all three together.
 - The version lives in `launcher/src/version.h`, `launcher/launcher.manifest`
@@ -272,7 +274,3 @@ one, it is added to the company design language first.
   on GitHub (or push the tag). The release workflow attaches the zip. See
   [docs/building.md](docs/building.md).
 
-## Known issues
-
-- The launcher passes `--runtime-check`, which `app.py` doesn't accept yet,
-  so it exits with a usage error.

@@ -1,7 +1,7 @@
 # Builds the launcher with a MinGW-w64 cross compiler (Linux, macOS or MSYS2).
 #
 #   make            build/launcher.exe (renamed to "Pixel Media Checker.exe" when packaged)
-#   make test       run the command-line quoting tests with the host compiler
+#   make test       run the argument quoting tests with the host compiler
 #   make wine-test  run the launcher under Wine against a fake interpreter
 #   make clean
 

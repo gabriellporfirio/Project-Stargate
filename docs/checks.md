@@ -11,6 +11,8 @@ Guideline sources:
 
 "Engine-dependent" means: **PASS** for the Scala Windows 32-bit engine,
 **FAIL** for Windows 64-bit, **REVIEW** when the engine is unknown or other.
+The app's presets leave the engine as unknown, so in the app these show as
+*Check before scheduling*.
 
 ## Formats
 
@@ -25,7 +27,7 @@ Guideline sources:
 | Audio format | Scala | MP3, WAV, AAC, M4A | | WMA: engine-dependent |
 | Audio-only media | Dise | | Always | |
 | PDF workflow | Scala | | Always (direct PDF playback isn't listed) | |
-| PDF workflow | Dise | Composer import on Premium & Lite | Otherwise | |
+| PDF workflow | Dise | Composer import on Premium & Lite (not offered in the app's presets) | Otherwise | |
 | Media type | Both | | | No readable video, image, audio or PDF |
 
 ## Size and layout (video and images)
@@ -53,8 +55,8 @@ checked as 1080×1920.
 | SoC codec | Dise, non-PC players | | VP9 |
 | Audio track | Dise | No audio | Audio present (can freeze playback on some players) |
 | Audio codec | Scala (any media with audio) | AAC, MP3, MP2, PCM | Other codecs; WMA is engine-dependent |
-| Combined playback | Both | | *Multiple videos* option selected |
-| Player details | Scala | | Engine set to *Other* (also applies to non-video media) |
+| Combined playback | Both | | *Multiple videos* setting on (not offered in the app's presets) |
+| Player details | Scala | | Engine set to *Other* (also applies to non-video media; not offered in the app's presets) |
 | Player details | Dise | | Version *Unknown*, or player *Unknown* / *Other* |
 
 When a file reports no video bitrate, it is estimated from the container
@@ -86,8 +88,10 @@ measured.
 | Dise One — PC / SoC (Generic) / Samsung / LG | Dise | Dise One | PC / SoC / Samsung Tizen / LG webOS |
 | Dise Premium / Lite — PC / SoC (Generic) / Samsung / LG | Dise | Premium & Lite | PC / SoC / Samsung Tizen / LG webOS |
 
-The Scala engine is left as *Unknown* in every preset; the CLI's
-`--scala-engine` sets it.
+Every preset leaves the Scala engine as *Unknown*, the PDF workflow as
+direct upload, and *Multiple videos* off. The rules for other values of
+these settings stay in the engine, but don't come up in the app until a
+preset offers them.
 
 Layouts: Standard / mixed sizes (no canvas), HD landscape 1920×1080, HD
 portrait 1080×1920, 2×1 / 3×1 / 4×1 landscape (3840 / 5760 / 7680 × 1080),

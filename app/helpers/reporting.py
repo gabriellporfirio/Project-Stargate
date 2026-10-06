@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
-
-from .models import AnalysisReport, MediaMetadata, PlatformResult
+from .models import MediaMetadata
 
 
 def human_size(value: int) -> str:
@@ -128,54 +126,3 @@ def technical_rows(meta: MediaMetadata) -> list[tuple[str, str]]:
         )
     return rows
 
-
-def _platform_lines(result: PlatformResult) -> list[str]:
-    lines = [f"{result.platform.upper()}: {result.status_label}", result.note, ""]
-    for finding in result.findings:
-        lines.append(f"[{finding.status.name}] {finding.rule}")
-        lines.append(f"  Detected: {finding.observed}")
-        lines.append(f"  Expected: {finding.expected}")
-        if finding.detail:
-            lines.append(f"  Note: {finding.detail}")
-        lines.append("")
-    return lines
-
-
-def format_text_report(report: AnalysisReport) -> str:
-    meta = report.metadata
-    lines = [
-        "MEDIA CHECK REPORT",
-        "=" * 72,
-        f"Generated: {report.generated_at}",
-        f"Checker: v{report.checker_version}",
-        f"File: {meta.filename}",
-        f"Path: {meta.path}",
-        f"Type: {meta.media_type.title()}",
-        f"Overall: {report.overall_status.name}",
-        f"Playback setup: {report.context.summary()}",
-        "",
-        "TECHNICAL SUMMARY",
-        "-" * 72,
-    ]
-    lines.extend(f"{key}: {value}" for key, value in technical_rows(meta))
-    lines.extend(["", "PLATFORM RESULTS", "-" * 72])
-    for result in report.selected_results:
-        lines.extend(_platform_lines(result))
-    if meta.probe_notes:
-        lines.extend(["PROBE NOTES", "-" * 72, *meta.probe_notes, ""])
-    lines.extend(
-        [
-            "INTERPRETATION",
-            "-" * 72,
-            "PASS = matches the checks for the selected setup.",
-            "REVIEW = confirm the setup, adjust the export or test on the player.",
-            "FAIL = an explicit restriction applies to the selected setup.",
-            "This is a file check. Actual playback, image quality and the complete screen layout still need checking.",
-            "",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def format_json_report(report: AnalysisReport, *, indent: int = 2) -> str:
-    return json.dumps(report.to_dict(), indent=indent, ensure_ascii=False)

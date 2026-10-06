@@ -1,20 +1,21 @@
 # Launcher
 
-`Pixel Media Checker.exe` is a small native Windows program that starts the
-bundled Python runtime on the bundled app. It contains no application logic.
+`Pixel Media Checker.exe` is a small native Windows program that opens the
+desktop app with the bundled Python runtime. It contains no application logic.
 
 ```
 Pixel Media Checker.exe
-_runtime\pythonw.exe     used for the desktop app (no console window)
-_runtime\python.exe      used when the arguments include --check, --version or --runtime-check
+_runtime\pythonw.exe     runs the app without a console window
 _app\app.py
 ```
+
+(`_runtime\python.exe` is also in the folder; the app uses it to read files
+in a separate process, but the launcher never starts it.)
 
 ## What it does
 
 1. Finds the folder containing the executable.
-2. Picks `python.exe` or `pythonw.exe` as above, and checks that it and
-   `_app\app.py` exist.
+2. Checks that `_runtime\pythonw.exe` and `_app\app.py` exist.
 3. Prepares an environment that ignores any other Python on the machine:
 
    | Variable           | Value                                              |
@@ -27,8 +28,10 @@ _app\app.py
    | `TK_LIBRARY`       | `<folder>\_runtime\tcl\tk8.6`                      |
    | `PATH`             | `<runtime>;<runtime>\DLLs;` + the existing `PATH`  |
 
-4. Runs `"<python>" "<folder>\_app\app.py" <arguments...>` with `_app` as
-   the working directory, passing every argument through unchanged.
+4. Runs `"<folder>\_runtime\pythonw.exe" "<folder>\_app\app.py" <arguments...>`
+   with `_app` as the working directory, passing every argument through
+   unchanged. In practice that is a file dropped onto the launcher or opened
+   with it, which the app checks as soon as its window opens.
 5. Waits for Python and returns its exit code.
 
 If something goes wrong before Python starts, it shows an error message box
@@ -60,16 +63,18 @@ version is set in `src/version.h` and `launcher.manifest`.
 ## Tests
 
 ```sh
-make -C launcher test       # command-line quoting, compiled for the host
-make -C launcher wine-test  # needs wine: runs the launcher against a fake python.exe
+make -C launcher test       # argument quoting, compiled for the host
+make -C launcher wine-test  # needs wine: runs the launcher against a fake pythonw.exe
 ```
 
-The Wine test checks the interpreter choice, arguments, working directory,
-environment and exit codes from the tables above.
+The Wine test checks that the launcher always starts `pythonw.exe`, and the
+arguments, working directory, environment and exit codes above.
 
 ## Origin
 
 This source was reconstructed from the executable that shipped before this
-repository existed. Apart from the version number, its version resource and
-manifest are identical to the original's, and the original and rebuilt
-executables give identical results in the Wine behaviour test.
+repository existed, and when first added it behaved identically to the
+original in the Wine behaviour test. Since then the original's command-line
+mode (starting `python.exe` for `--check` and `--version`) has been removed,
+because the app is desktop-only. The version resource and manifest otherwise
+match the original's.

@@ -1,15 +1,14 @@
 # Architecture
 
 ```
-Pixel Media Checker.exe ──► _runtime\pythonw.exe _app\app.py [FILE]      desktop
-     (launcher/)        └─► _runtime\python.exe  _app\app.py --check …   headless
+Pixel Media Checker.exe ──► _runtime\pythonw.exe _app\app.py [FILE]
+     (launcher/)
 
-app.py ─┬─ desktop.py ── workflow.py ─┐
-        └─ cli.py ────────────────────┼─► helpers.analyzer.analyze_file(path, context)
-                                       │        │
-           presets.py ─► PlaybackContext        ├─ helpers.probe.probe_media ──► MediaMetadata
-                                                ├─ helpers.rules.evaluate_scala / evaluate_dise
-                                                └─► AnalysisReport ──► reporting.py (text / JSON)
+app.py ── desktop.py ── workflow.py ──► helpers.analyzer.analyze_file(path, context)
+                                                 │
+          presets.py ─► PlaybackContext          ├─ helpers.probe.probe_media ──► MediaMetadata
+                                                 ├─ helpers.rules.evaluate_scala / evaluate_dise
+                                                 └─► AnalysisReport ──► workflow.py (verdict, details)
 ```
 
 ## Launcher
@@ -21,10 +20,9 @@ environment and error codes.
 
 ## Entry points
 
-- **`app.py`** builds the argument parser from `cli.py`. With `--check FILE`
-  it builds a `PlaybackContext` from the flags and calls `cli.run_cli`,
-  which prints a text or JSON report and returns 0/1/2/3. Otherwise it
-  opens the desktop app, optionally with a file to check straight away.
+- **`app.py`** opens the desktop app. A file dropped onto the launcher, or
+  opened with it, arrives as the first argument and is checked as soon as
+  the window opens. The app has no command-line mode.
 - **`desktop.py`** (Tk) turns the selected *Player* and *Layout* into a
   context with `presets.make_context`. It runs `workflow.check_files` on a
   background thread and polls a queue to update the window. `appearance.py`
@@ -41,7 +39,7 @@ environment and error codes.
 and player hardware, the expected canvas size, the PDF workflow, and whether
 several videos play at once. It validates every field on creation.
 `presets.py` names the common combinations, e.g. *Dise One — Samsung* or
-*3×1 landscape*, and both the CLI defaults and the desktop app use them.
+*3×1 landscape*, which are what the desktop app offers.
 
 ## Reading files (`helpers/probe.py`)
 
@@ -87,12 +85,11 @@ of `Finding`s with a status:
 
 A platform's status is its worst non-`INFO` finding, or `REVIEW` if it has
 none. The report's overall status is the worst of the selected platforms.
-The CLI exit code and the desktop verdict both come from it. Every rule is
-listed in [checks.md](checks.md).
+The desktop verdict comes from it. Every rule is listed in
+[checks.md](checks.md).
 
-## Reports (`helpers/reporting.py`)
+## File properties (`helpers/reporting.py`)
 
-`format_text_report` and `format_json_report` render an `AnalysisReport`:
-the checker version, timestamp, playback context, technical summary,
-per-platform findings, and probe notes. `technical_rows` also feeds the
-*File properties* block in the desktop details view.
+`technical_rows` turns `MediaMetadata` into the label/value rows of the
+*File properties* block in the desktop details view, with `human_size`,
+`human_duration` and `human_bitrate` for readable values.

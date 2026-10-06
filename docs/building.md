@@ -31,7 +31,7 @@ To cut a release:
    places, which `tests/test_version.py` checks agree:
    `launcher/src/version.h`, the `assemblyIdentity` in
    `launcher/launcher.manifest`, and `CHECKER_VERSION` in
-   `app/helpers/analyzer.py` (shown by `--version` and in reports).
+   `app/helpers/analyzer.py` (recorded in every check's report).
 2. In `CHANGELOG.md`, move *Unreleased* under the new version with today's
    date (for 1.0, just add the date), and merge to `main`.
 3. Publish the release, either way:
