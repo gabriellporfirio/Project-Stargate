@@ -268,8 +268,9 @@ one, it is added to the company design language first.
   the current version is **1.0**. Change `launcher/src/version.h`,
   `launcher/launcher.manifest` and `CHECKER_VERSION` together
   (`tests/test_version.py` checks they agree), move *Unreleased* in
-  `CHANGELOG.md` under the new version, merge, then push a `vX.Y` tag. The
-  release workflow publishes the zip. See [docs/building.md](docs/building.md).
+  `CHANGELOG.md` under the new version, merge, then publish a `vX.Y` release
+  on GitHub (or push the tag). The release workflow attaches the zip. See
+  [docs/building.md](docs/building.md).
 
 ## Known issues
 

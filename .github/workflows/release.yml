@@ -3,10 +3,13 @@ name: Release
 # Builds the portable Windows folder and smoke-tests it on Windows.
 #   - pull requests that touch the build: build and test only
 #   - manual run: build, test and keep the zip as a workflow artifact
-#   - tag vX.Y (e.g. v1.0): also publish the zip as a GitHub release
+#   - tag vX.Y (e.g. v1.0), or a release published on GitHub: also attach the
+#     zip to that GitHub release, creating the release if it doesn't exist
 on:
   push:
     tags: ["v*"]
+  release:
+    types: [published]
   pull_request:
     paths:
       - "packaging/**"
@@ -17,6 +20,12 @@ on:
 
 permissions:
   contents: read
+
+# Publishing a release on GitHub with a new tag fires both the tag push and
+# the release event; keep only the latest run for the same tag.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # Python bundled in _runtime. The launcher expects Tcl/Tk 8.6 (Python 3.12).
@@ -82,11 +91,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: portable-build
-      - name: Create GitHub release
+      - name: Attach the zip to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "${{ github.ref_name }}" *.zip
-          --repo "${{ github.repository }}"
-          --title "Pixel Media Checker ${{ github.ref_name }}"
-          --generate-notes
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" *.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" *.zip --repo "$GITHUB_REPOSITORY" \
+              --title "Pixel Media Checker $TAG" --generate-notes
+          fi

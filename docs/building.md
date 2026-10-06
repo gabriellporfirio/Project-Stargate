@@ -23,7 +23,7 @@ GitHub's runners:
 | --- | --- |
 | Pull request touching `packaging/`, `launcher/`, `requirements.txt` or the workflow | Build and smoke test only |
 | **Actions → Release → Run workflow** | Build, smoke test, and attach the zip to the run as an artifact (kept 14 days) |
-| Push a tag `vX.Y` (e.g. `v1.0`) | Build, smoke test, and publish `Pixel-Media-Checker-X.Y-win64.zip` as a GitHub release |
+| Publish a release on GitHub, or push a tag `vX.Y` (e.g. `v1.0`) | Build, smoke test, and attach `Pixel-Media-Checker-X.Y-win64.zip` to the GitHub release (created if it doesn't exist) |
 
 To cut a release:
 
@@ -34,8 +34,16 @@ To cut a release:
    `app/helpers/analyzer.py` (shown by `--version` and in reports).
 2. In `CHANGELOG.md`, move *Unreleased* under the new version with today's
    date (for 1.0, just add the date), and merge to `main`.
-3. Tag and push, e.g. `git tag v1.0 && git push origin v1.0`.
-   The build fails if the tag does not match `version.h`.
+3. Publish the release, either way:
+   - **On GitHub:** *Releases → Draft a new release*. Under *Choose a tag*
+     type the new tag (e.g. `v1.0`) and pick *Create new tag on publish*,
+     with `main` as the target. Title it *Pixel Media Checker 1.0*, click
+     *Generate release notes*, then *Publish release*.
+   - **With git:** `git tag v1.0 && git push origin v1.0`.
+
+   The Release workflow then builds and smoke-tests the app and attaches
+   the zip to the release, in about five minutes. The build fails if the
+   tag does not match `version.h`.
 
 ## Building on your own Windows machine
 
