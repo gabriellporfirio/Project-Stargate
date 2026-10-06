@@ -23,14 +23,18 @@ GitHub's runners:
 | --- | --- |
 | Pull request touching `packaging/`, `launcher/`, `requirements.txt` or the workflow | Build and smoke test only |
 | **Actions → Release → Run workflow** | Build, smoke test, and attach the zip to the run as an artifact (kept 14 days) |
-| Push a tag `vX.Y.Z` | Build, smoke test, and publish `Pixel-Media-Checker-X.Y.Z-win64.zip` as a GitHub release |
+| Push a tag `vX.Y` (e.g. `v1.0`) | Build, smoke test, and publish `Pixel-Media-Checker-X.Y-win64.zip` as a GitHub release |
 
 To cut a release:
 
-1. Update the version in `launcher/src/version.h` and in the
-   `assemblyIdentity` of `launcher/launcher.manifest`.
-2. Add the changes to `CHANGELOG.md` and merge to `main`.
-3. Tag and push: `git tag v1.2.1 && git push origin v1.2.1`.
+1. Versions are `MAJOR.MINOR` (1.0, 1.1, 2.0). Set the new one in all three
+   places, which `tests/test_version.py` checks agree:
+   `launcher/src/version.h`, the `assemblyIdentity` in
+   `launcher/launcher.manifest`, and `CHECKER_VERSION` in
+   `app/helpers/analyzer.py` (shown by `--version` and in reports).
+2. In `CHANGELOG.md`, move *Unreleased* under the new version with today's
+   date (for 1.0, just add the date), and merge to `main`.
+3. Tag and push, e.g. `git tag v1.0 && git push origin v1.0`.
    The build fails if the tag does not match `version.h`.
 
 ## Building on your own Windows machine

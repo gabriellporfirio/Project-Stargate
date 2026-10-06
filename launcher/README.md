@@ -69,7 +69,7 @@ environment and exit codes from the tables above.
 
 ## Origin
 
-This source was reconstructed from the shipped 1.2.0 executable. The
-version resource and manifest are identical to the original, and the
-original and rebuilt executables give identical results in the Wine
-behaviour test.
+This source was reconstructed from the executable that shipped before this
+repository existed. Apart from the version number, its version resource and
+manifest are identical to the original's, and the original and rebuilt
+executables give identical results in the Wine behaviour test.

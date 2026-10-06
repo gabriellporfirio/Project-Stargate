@@ -3,7 +3,7 @@ name: Release
 # Builds the portable Windows folder and smoke-tests it on Windows.
 #   - pull requests that touch the build: build and test only
 #   - manual run: build, test and keep the zip as a workflow artifact
-#   - tag vX.Y.Z: also publish the zip as a GitHub release
+#   - tag vX.Y (e.g. v1.0): also publish the zip as a GitHub release
 on:
   push:
     tags: ["v*"]
