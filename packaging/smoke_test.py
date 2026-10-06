@@ -2,8 +2,8 @@
 
     python packaging/smoke_test.py "dist/Pixel Media Checker"
 
-Checks exit codes through the launcher, and runs the bundled python.exe
-directly (with the environment the launcher sets) where output matters.
+Checks the bundled runtime and app with the bundled python.exe (in the
+environment the launcher sets), then that the launcher opens the desktop app.
 """
 
 from __future__ import annotations
@@ -49,6 +49,24 @@ import sys, tkinter, PIL.ImageTk, pypdf, av
 print(sys.prefix)
 print(tkinter.Tcl().eval("info patchlevel"))
 print("\n".join(sys.path))
+"""
+
+# Checks files the way the desktop app does, with its default player and layout.
+CHECK_FILES = r"""
+import json, sys
+from pathlib import Path
+from presets import DEFAULT_LAYOUT, DEFAULT_PLAYER, make_context
+from workflow import check_files
+
+context = make_context(DEFAULT_PLAYER, DEFAULT_LAYOUT)
+results = {
+    result.path.name: [
+        result.action.value,
+        result.report.metadata.probe_backend if result.report else "",
+    ]
+    for result in check_files([Path(arg) for arg in sys.argv[1:]], context)
+}
+print(json.dumps(results))
 """
 
 DESKTOP = r"""
@@ -102,9 +120,6 @@ def main() -> int:
             check=False,
         )
 
-    def launch(*args: str) -> int:
-        return subprocess.run([str(launcher), *args], timeout=300, check=False).returncode
-
     result = python("-c", RUNTIME_CHECK)
     check("bundled runtime imports tkinter, Pillow, pypdf and PyAV", result.returncode == 0, result.stderr)
     if result.returncode == 0:
@@ -117,29 +132,59 @@ def main() -> int:
     result = python("-c", DESKTOP)
     check("desktop window builds", result.returncode == 0, result.stderr)
 
-    with tempfile.TemporaryDirectory(prefix="pmc smoke ") as scratch:
+    with tempfile.TemporaryDirectory(prefix="pmc smoke ", ignore_cleanup_errors=True) as scratch:
         samples = Path(scratch)
         result = python("-c", SAMPLES, str(samples))
         check("sample files are created", result.returncode == 0, result.stderr)
 
-        result = python("app.py", "--check", str(samples / "clip.mp4"), "--json")
-        check("video check runs", result.returncode in (0, 1), result.stdout + result.stderr)
-        if result.returncode in (0, 1):
-            backend = json.loads(result.stdout)["metadata"]["probe_backend"]
+        names = ("still.png", "menu.pdf", "print.jpg", "missing.mp4", "clip.mp4")
+        result = python("-c", CHECK_FILES, *(str(samples / name) for name in names))
+        check("files are checked", result.returncode == 0, result.stderr)
+        if result.returncode == 0:
+            results = json.loads(result.stdout)
+            for name, expected in (
+                ("still.png", "Pass"),
+                ("menu.pdf", "Check before scheduling"),
+                ("print.jpg", "Fail - check with client"),
+                ("missing.mp4", "Could not check"),
+            ):
+                check(f"{name}: {expected}", results[name][0] == expected, results[name])
+            action, backend = results["clip.mp4"]
+            check(
+                "clip.mp4: Pass or Check before scheduling",
+                action in ("Pass", "Check before scheduling"),
+                action,
+            )
             expected = "ffprobe" if bundled_ffprobe else "PyAV"
             check(f"video is read with {expected}", backend == expected, backend)
 
-        check("launcher --version exits 0", launch("--version") == 0)
-        for name, expected in (
-            ("still.png", 0),
-            ("menu.pdf", 1),
-            ("print.jpg", 2),
-            ("missing.mp4", 3),
-        ):
-            code = launch("--check", str(samples / name))
-            check(f"launcher --check {name} exits {expected}", code == expected, code)
-        code = launch("--check", str(samples / "clip.mp4"))
-        check("launcher --check clip.mp4 exits 0 or 1", code in (0, 1), code)
+        # Opened with a file, the launcher starts pythonw.exe and waits while
+        # the window is open. A broken bundle makes the app exit at once, and
+        # a launcher error shows a dialog without starting pythonw.exe.
+        process = subprocess.Popen([str(launcher), str(samples / "clip.mp4")])
+        try:
+            process.wait(timeout=15)
+            check("launcher keeps the desktop app open", False, f"exit code {process.returncode}")
+        except subprocess.TimeoutExpired:
+            children = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-CimInstance Win32_Process -Filter 'ParentProcessId={process.pid}').Name",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            ).stdout.split()
+            check("launcher opens the desktop app with pythonw.exe", "pythonw.exe" in children, children)
+        finally:
+            # Stop the launcher and the app it started.
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(process.pid)], capture_output=True, check=False
+            )
+            process.wait(timeout=60)
 
     if FAILURES:
         print("\n".join(["", "Failures:", *FAILURES]), file=sys.stderr)
