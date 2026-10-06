@@ -120,7 +120,9 @@ Build and release: [docs/building.md](docs/building.md).
   choice, environment, exit codes 10–16) is a contract documented in
   [launcher/README.md](launcher/README.md) and checked by
   `launcher/tests/wine_test.py`. Change all three together.
-- The version lives in `launcher/src/version.h` and `launcher/launcher.manifest`.
+- The version lives in `launcher/src/version.h`, `launcher/launcher.manifest`
+  and `CHECKER_VERSION` in `app/helpers/analyzer.py`; see *Versions and
+  releases* below.
 
 ### Comments and docs
 
@@ -262,14 +264,14 @@ one, it is added to the company design language first.
   `launcher/` or `requirements.txt` also build and smoke-test the portable
   app on Windows. A job that was cancelled before it got a runner is a
   GitHub capacity problem, not a code failure: re-run it.
-- **Versions and releases**: bump `launcher/src/version.h` and
-  `launcher/launcher.manifest` together, move *Unreleased* in `CHANGELOG.md`
-  under the new version, merge, then push a `vX.Y.Z` tag. The release
-  workflow publishes the zip. See [docs/building.md](docs/building.md).
+- **Versions and releases**: versions are `MAJOR.MINOR` (1.0, 1.1, 2.0);
+  the current version is **1.0**. Change `launcher/src/version.h`,
+  `launcher/launcher.manifest` and `CHECKER_VERSION` together
+  (`tests/test_version.py` checks they agree), move *Unreleased* in
+  `CHANGELOG.md` under the new version, merge, then push a `vX.Y` tag. The
+  release workflow publishes the zip. See [docs/building.md](docs/building.md).
 
 ## Known issues
 
 - The launcher passes `--runtime-check`, which `app.py` doesn't accept yet,
   so it exits with a usage error.
-- Reports show checker version `1.0` (`CHECKER_VERSION` in
-  `app/helpers/analyzer.py`); the app is 1.2.0.
