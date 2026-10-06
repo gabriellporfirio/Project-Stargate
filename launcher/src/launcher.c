@@ -1,12 +1,11 @@
 /*
  * Pixel Media Checker launcher.
  *
- * Starts the embedded Python runtime on the bundled application, from the
- * folder that contains this executable:
+ * Starts the desktop app with the embedded Python runtime, from the folder
+ * that contains this executable:
  *
  *   Pixel Media Checker.exe
- *   _runtime\pythonw.exe     desktop app (no console window)
- *   _runtime\python.exe      --check, --version and --runtime-check
+ *   _runtime\pythonw.exe     runs the app without a console window
  *   _app\app.py
  *
  * Python runs with _app as its working directory, in an environment that
@@ -40,9 +39,6 @@ enum {
     EXIT_COMMAND_TOO_LONG = 15,
     EXIT_START_FAILED = 16,
 };
-
-/* Arguments that need console output, so run python.exe instead of pythonw.exe. */
-static const wchar_t *const CONSOLE_ARGS[] = {L"--check", L"--version", L"--runtime-check"};
 
 static wchar_t module_path[PATH_CAPACITY];
 static wchar_t base_dir[PATH_CAPACITY];
@@ -138,15 +134,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR command_line, 
 
     int argc = 0;
     wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    const wchar_t *interpreter = L"pythonw.exe";
-    for (int i = 1; argv != NULL && i < argc; ++i) {
-        for (size_t j = 0; j < sizeof CONSOLE_ARGS / sizeof CONSOLE_ARGS[0]; ++j) {
-            if (wcscmp(argv[i], CONSOLE_ARGS[j]) == 0)
-                interpreter = L"python.exe";
-        }
-    }
 
-    if (!concat(python_path, PATH_CAPACITY, runtime_dir, L"\\", interpreter, NULL) ||
+    if (!concat(python_path, PATH_CAPACITY, runtime_dir, L"\\pythonw.exe", NULL) ||
         !is_file(python_path) || !is_file(script_path)) {
         if (argv != NULL)
             LocalFree(argv);
@@ -163,7 +152,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR command_line, 
                     EXIT_NO_MEMORY);
     }
 
-    /* "python.exe" "...\_app\app.py" followed by every argument passed to us. */
+    /* "pythonw.exe" "...\_app\app.py" followed by every argument passed to us,
+       such as a file dropped onto the launcher. */
     size_t used = 0;
     int fits = cmdline_append_quoted(command, COMMAND_CAPACITY, &used, python_path) &&
                cmdline_append_char(command, COMMAND_CAPACITY, &used, L' ') &&

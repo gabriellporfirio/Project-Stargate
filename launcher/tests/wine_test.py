@@ -97,12 +97,13 @@ def main() -> int:
             report.get("PATH"),
         )
 
-        for flag in ("--check", "--version", "--runtime-check"):
-            _, report = bundle.run(flag)
-            check(f"{flag} uses python.exe", report.get("interpreter") == "python.exe", report)
+        # python.exe sits in the runtime too, but the launcher never uses it:
+        # whatever the arguments, it opens the desktop app.
+        for args in (["C:\\Media\\clip.mp4"], ["--check", "x.png"], ["--version"]):
+            _, report = bundle.run(*args)
+            check(f"{args} opens the desktop app", report.get("interpreter") == "pythonw.exe", report)
 
         tricky = [
-            "--check",
             "C:\\Media Files\\clip one.mp4",
             'say "hi"',
             "C:\\trailing\\",
@@ -113,10 +114,10 @@ def main() -> int:
         _, report = bundle.run(*tricky)
         check("arguments reach Python unchanged", argv(report)[2:] == tricky, argv(report))
 
-        code, _ = bundle.run("--check", "x.png", FAKE_EXIT="2")
-        check("console exit code is passed through", code == 2, code)
         code, _ = bundle.run(FAKE_EXIT="7")
-        check("desktop exit code is passed through", code == 7, code)
+        check("exit code is passed through", code == 7, code)
+        code, _ = bundle.run("C:\\Media\\clip.mp4", FAKE_EXIT="2")
+        check("exit code is passed through when a file is opened", code == 2, code)
 
         (bundle.runtime / "pythonw.exe").rename(bundle.runtime / "pythonw.bak")
         code, report = bundle.run()
@@ -124,7 +125,7 @@ def main() -> int:
         (bundle.runtime / "pythonw.bak").rename(bundle.runtime / "pythonw.exe")
 
         (bundle.app / "app.py").unlink()
-        code, report = bundle.run("--version")
+        code, report = bundle.run()
         check("missing app.py exits 13", code == 13 and not report, code)
 
         # Stop Wine before its prefix is deleted with the temporary folder.
