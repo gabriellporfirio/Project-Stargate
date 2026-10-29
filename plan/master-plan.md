@@ -1,6 +1,6 @@
 # StarGate: master plan
 
-Version 1 · 29 Oct 2026 · Status: draft for review by you, Claude and ChatGPT
+Version 2 · 29 Oct 2026 · Status: draft for review by you, Claude and ChatGPT
 
 This is the single source of truth. Muse builds from it, and nothing gets built that isn't in it. Anything we don't know yet is listed as an open question, not assumed.
 
@@ -18,6 +18,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 4. **No assumptions.** Every fact the platform uses must be measured, cited or marked unknown. That goes for this plan too: see section 4.
 5. **Small steps you can see.** Each milestone ends with a demo you can run yourself in under five minutes, and a plain-English report: what was built, what's real, what's simulated, and what's unknown.
 6. **Nothing leaves the laptop** (push, publish, cloud builds) without your OK on that specific action.
+7. **Core platform first; VPN is optional at the end.** Prioritise device checks, Meta-assisted research and planning, supported service choices, and dynamic image building. Gabriell confirms the existing StarGate VPN work is already done. If time remains after the core work, consider integrating that existing work; do not rebuild it. Its private implementation and production setup are outside this repo and are not required inputs for any core milestone.
 
 ## 3. What the finished product looks like
 
@@ -31,7 +32,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 |---|---|---|
 | Files (NAS) | Shares on internal/SD/USB storage, users, how to connect | M4 |
 | Assistant | On-device chatbot with a model sized to the phone, measured speed | M4 |
-| VPN | Tailscale panel: account, start/stop, exit node, update | M6 |
+| VPN | Optional integration of the existing StarGate VPN work; details deferred | Only if time remains after the core platform |
 | Vault | Bitwarden-compatible password server management | Later |
 | Home | Home-automation hub (only where the phone has enough memory) | Later |
 
@@ -82,10 +83,10 @@ The launcher and the Files and Assistant modules running inside the Android Emul
 
 ### M5: Image builder
 It builds a StarGate OS image for the emulator target, with the chosen modules baked in, and checks it: format, size fit, contents match the selection exactly. It also generates the build plan for one real device from M2/M3 research, and runs it on a Linux machine only if Q6 says yes.
-**Demo:** build with 2 modules and with 3 modules, boot each in the emulator, and see a different home screen each time.
+**Demo:** build a Files-only image and a Files + Assistant image. Inspect their contents and boot each in the emulator; the included modules and home screen must match each selection. This demonstrates dynamic composition using the two core modules.
 
 ### M6: The StarGate app
-The full guided app from the mockup, wired to M1–M5. You can click through end to end on simulated phones and the emulator. Install shows exact steps but doesn't run them. VPN module panel added.
+The full guided app from the mockup, wired to M1–M5. You can click through end to end on simulated phones and the emulator. Install shows exact steps but doesn't run them. VPN integration is an optional later task and is not part of this milestone or its acceptance criteria.
 **Demo:** a full click-through in the browser.
 
 ### M7: Real-device test (only with explicit approval)
@@ -122,3 +123,5 @@ For every milestone:
 ## 7. Changes to this plan
 
 Only by your decision, recorded here with the date and reason.
+
+- **29 Oct 2026 — VPN deferred (Gabriell's decision):** Focus on the rest of the platform. The existing StarGate VPN work is already done, so this project must not recreate it. Integration is optional at the end, only if time remains after the core platform. Removed the required VPN panel from M6 and changed M5's demo to compare Files-only with Files + Assistant, so neither milestone depends on VPN work. The existing milestone schedule and hackathon cut line are unchanged by this scope decision.
