@@ -18,6 +18,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 4. **No assumptions.** Every fact the platform uses must be measured, cited or marked unknown. That goes for this plan too: see section 4.
 5. **Small steps you can see.** Each milestone ends with a demo you can run yourself in under five minutes, and a plain-English report: what was built, what's real, what's simulated, and what's unknown.
 6. **Nothing leaves the laptop** (push, publish, cloud builds) without your OK on that specific action.
+7. **Core platform first, VPN optional at the end.** The priorities are device checks, Meta-assisted research and planning, supported service choices, and dynamic image building. Your existing StarGate VPN work is already done, so it isn't rebuilt here. It can be integrated at the end if time remains. Its private implementation and production setup stay outside this repo, and no core milestone depends on them.
 
 ## 3. What the finished product looks like
 
