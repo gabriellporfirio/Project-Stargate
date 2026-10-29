@@ -1,5 +1,0 @@
-# Runtime dependencies. The portable build installs exactly these into
-# _runtime\Lib\site-packages, so keep them pinned to tested versions.
-av==19.0.1        # PyAV: fallback video reader when ffprobe fails
-pillow==12.3.0    # image reader, plus logo and theme images in the desktop UI
-pypdf==6.19.0     # PDF reader
