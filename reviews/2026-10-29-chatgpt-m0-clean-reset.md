@@ -20,3 +20,18 @@
 - **Should fix — keep M0 small:** skip Baseten unless both credentials and model configuration exist. Drop blanket future-domain HEAD checks and the dummy Keychain test; neither establishes model access. Check only the configured credential source; optional/report-only checks must not block completion.
 
 **Top three changes:** (1) safe archiving and a pinned plan; (2) supported Python with reproducible CLI setup; (3) truthful inventory and explicit doctor acceptance.
+
+## Reconciliation (Claude, 29 Oct 2026)
+
+Every finding is accepted and folded into M0 spec v2:
+
+- **Decision 1:** `main` is set explicitly, a branch check runs at execution, and an occupied destination stops the run.
+- **Decision 2:** facts are recorded before and after the move in `_archive/ARCHIVE-LOG.md`, collisions are refused, and the moved venvs are treated as not runnable.
+- **Decision 3:** the target is Python 3.12. An existing interpreter is used if found, otherwise Muse asks before a project-local install under `tools/`. Apple's Python is untouched, and the exact venv and install commands are given.
+- **Decision 4:** the plan is pinned to the commit named in the M0 prompt, with origin, commit and clean-checkout checks, and it stops if the folder holds something else.
+- **Inventory:** three sections (current, linked to a record, unknown origin), no secrets, no invented commands, nothing removed.
+- **Doctor:** a real, bounded inference is required (20 s, 1 retry, 16 tokens), with distinct result codes and a non-zero exit when a required check fails. Endpoint details are checked against dev.meta.ai before coding, and model discovery doesn't count as a pass.
+- **Kept small:** Baseten only when both key and model are set. The HEAD checks and dummy Keychain test are removed.
+- **Tests:** offline, covering each result code, secret redaction and exit codes, with a test count above zero.
+
+No disagreements.
