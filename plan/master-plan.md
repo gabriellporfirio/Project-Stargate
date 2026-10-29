@@ -1,6 +1,6 @@
 # StarGate: master plan
 
-Version 1 · 29 Oct 2026 · Status: draft for review by you, Claude and ChatGPT
+Version 2 · 29 Oct 2026 · Status: v1 approved; this version folds in the first ChatGPT review
 
 This is the single source of truth. Muse builds from it, and nothing gets built that isn't in it. Anything we don't know yet is listed as an open question, not assumed.
 
@@ -13,7 +13,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 ## 2. Ground rules
 
 1. **Muse builds and Meta models power the product** (hackathon rule). Claude and ChatGPT plan, review and mock up. They don't write product code.
-2. **No phone until the platform is finished.** Everything is built and tested on simulated devices and the Android Emulator. Your only phone is your production VPN server, and it is off-limits until a final, separately approved test (section 6).
+2. **No phone until the platform is finished.** Everything is built and tested on simulated devices and the Android Emulator. Your only phone is your production VPN server, and it is off-limits until a final, separately approved test (M7 in section 5).
 3. **No hidden installs.** Everything Muse installs goes inside the project folder: one `.venv`, one `tools/` folder. Anything installed system-wide (Homebrew, adb, Docker) must be asked for first and logged in `INSTALL-LOG.md`, with the command and how to undo it.
 4. **No assumptions.** Every fact the platform uses must be measured, cited or marked unknown. That goes for this plan too: see section 4.
 5. **Small steps you can see.** Each milestone ends with a demo you can run yourself in under five minutes, and a plain-English report: what was built, what's real, what's simulated, and what's unknown.
@@ -29,11 +29,11 @@ StarGate turns an old Android phone into a private home server. You run the Star
 
 | Module | What the user gets | Built in which milestone |
 |---|---|---|
-| Files (NAS) | Shares on internal/SD/USB storage, users, how to connect | M4 |
-| Assistant | On-device chatbot with a model sized to the phone, measured speed | M4 |
-| VPN | Tailscale panel: account, start/stop, exit node, update | M6 |
-| Vault | Bitwarden-compatible password server management | Later |
-| Home | Home-automation hub (only where the phone has enough memory) | Later |
+| Files (NAS) | Shares on internal/SD/USB storage, users, how to connect | M4 (baked into the image) |
+| Assistant | On-device chatbot with a model sized to the phone, measured speed | M4 (baked into the image) |
+| VPN | Tailscale panel: account, start/stop, exit node, update | Optional, last, only if time remains. You already have working VPN in a separate project, so nothing is rebuilt here |
+| Vault | Bitwarden-compatible password server management | After the hackathon |
+| Home | Home-automation hub (only where the phone has enough memory) | After the hackathon |
 
 ## 4. Known facts and open questions
 
@@ -55,6 +55,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | Q5 | Would you buy a cheap used test phone (a supported model) instead of risking the production one? | You | Before M7 |
 | Q6 | A Linux build machine for full Android builds: cloud VM, home server, or skip? | You | M5 |
 | Q7 | Which emulator image and Android version Muse uses as the stand-in phone | Muse, documented | M4 |
+| Q8 | Can an emulator system image be unpacked, extended with StarGate OS and repacked on the Mac, or does that need Linux too? | Muse, by trying it in M4 and documenting the result | M4 |
 
 ## 5. The path: milestones
 
@@ -76,17 +77,18 @@ Given a phone's identity (model or codename, no phone needed), the agent searche
 It ranks how to build the OS for that phone: community tree build / generic system image / stock firmware rebuild / Linux / on-top-of-Android fallback, with reasons, risks and signing implications. The fit engine checks memory, storage, kernel features and AI model size. Over-budget selections are blocked.
 **Demo:** two simulated phones give different ranked plans, and an impossible selection is refused with a reason.
 
-### M4: StarGate OS on the emulator
-The launcher and the Files and Assistant modules running inside the Android Emulator on your Mac. The home screen shows only the chosen apps, Files serves a share, and Assistant runs a small model.
-**Demo:** an emulator window with the StarGate home screen. You open Files and Assistant, and both work.
+### M4: A StarGate OS image, built and booted in the emulator
+This is where the image gets built. The builder takes a selection (e.g. Files + Assistant) and produces an emulator system image with the launcher and those modules baked in. It checks the image: format, size fit, and contents matching the selection exactly. Then it boots the image in the Android Emulator on your Mac.
+If Q8 shows the image can't be repacked on the Mac, the fallback is a stock emulator image with StarGate OS installed on top. The plan labels that a **configuration bundle, not an image**, and moves image repacking to the Linux build machine (Q6).
+**Demo:** build once with Files + Assistant and once with Files only. Boot each, and see a different home screen. Files serves a share, and Assistant answers with a small model.
 
-### M5: Image builder
-It builds a StarGate OS image for the emulator target, with the chosen modules baked in, and checks it: format, size fit, contents match the selection exactly. It also generates the build plan for one real device from M2/M3 research, and runs it on a Linux machine only if Q6 says yes.
-**Demo:** build with 2 modules and with 3 modules, boot each in the emulator, and see a different home screen each time.
+### M5: Real-phone image plan
+For a real phone (from the M2 research and M3 ranking), the builder produces the full, specific build plan: base source or firmware, kernel and features, partition sizes, signing steps, the module list, and the validation checks it will run. It runs that build only on a Linux build machine, and only if Q6 says yes. Without one, the plan is the deliverable, marked "not built".
+**Demo:** `stargate build-plan --sim flagship --services files,assistant` prints a readable, cited plan, and two different phones give two different plans.
 
 ### M6: The StarGate app
-The full guided app from the mockup, wired to M1–M5. You can click through end to end on simulated phones and the emulator. Install shows exact steps but doesn't run them. VPN module panel added.
-**Demo:** a full click-through in the browser.
+The full guided app from the mockup, wired to M1–M5. You can click through end to end on simulated phones, and Build produces the real emulator image from M4. Install shows exact steps but doesn't run them.
+**Demo:** a full click-through in the browser, ending with the image booting in the emulator.
 
 ### M7: Real-device test (only with explicit approval)
 A written test plan for a specific phone covering: exact commands, what changes, how to recover, what could go wrong. On the production phone, only a non-flashing `fastboot boot` test, and only if Q4 confirms it's possible. Strongly preferred: a cheap test phone (Q5).
@@ -100,14 +102,14 @@ A written test plan for a specific phone covering: exact commands, what changes,
 | Fri 30 Oct | M0 clean reset + M1 device profiles |
 | Sat 31 Oct | M2 research agent |
 | Sun 1 Nov | M3 strategy + fit engines |
-| Mon 2 Nov | M4 StarGate OS on the emulator |
-| Tue 3 Nov | M6 app on simulated phones (last day for organiser troubleshooting) |
+| Mon 2 Nov | M4 StarGate OS image built and booted in the emulator |
+| Tue 3 Nov | M6 app + M5 real-phone image plan (last day for organiser troubleshooting) |
 | Wed 4 Nov (until 9 PM) | Demo video, submission write-up, buffer. No new features |
 
-M5 and M7 come after the hackathon unless we're ahead of schedule.
+M7 (real phone) comes after the hackathon. The VPN module is optional and last, only if everything above is done.
 
 ### Hackathon cut line
-If time is short, the demo is **M0–M4 plus the M6 app on simulated phones**. That already shows Meta-powered research and planning and a real StarGate OS running in the emulator. M5 and M7 come after.
+If time is short, M5 shrinks to a plan for one simulated phone, but **M4 stays**: a real, selection-driven image booting in the emulator is the core of the demo. Together with M1–M3 and the M6 app, that shows the full chain: phone checks → supported choices → Meta-powered research and planning → a dynamically built image.
 
 ## 6. Review workflow
 
@@ -122,3 +124,9 @@ For every milestone:
 ## 7. Changes to this plan
 
 Only by your decision, recorded here with the date and reason.
+
+| Date | Change | Reason |
+|---|---|---|
+| 29 Oct 2026 | Plan v1 approved (PR #15) | Clean-slate restart |
+| 29 Oct 2026 | Image building moved into the hackathon scope: M4 now builds and boots a real image in the emulator, and M5 produces real-phone build plans | ChatGPT review: the draft postponed image building, against the agreed priority order (checks → choices → built images) |
+| 29 Oct 2026 | VPN module removed from M6 and made optional and last | You already have working VPN in a separate project, so there's no need to rebuild it here |
