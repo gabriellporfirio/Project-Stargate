@@ -14,7 +14,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 
 1. **Muse builds and Meta models power the product** (hackathon rule). Claude and ChatGPT plan, review and mock up. They don't write product code.
 2. **No phone until the platform is finished.** Everything is built and tested on simulated devices and the Android Emulator. Your only phone is your production VPN server, and it is off-limits until a final, separately approved test (M7 in section 5).
-3. **No hidden installs.** Everything Muse installs goes inside the project folder: one `.venv`, one `tools/` folder. Anything installed system-wide (Homebrew, adb, Docker) must be asked for first and logged in `INSTALL-LOG.md`, with the command and how to undo it.
+3. **Cloud first, nothing new on the Mac by default.** Development runs in a cloud workspace (GitHub Codespaces for M0–M3). Nothing gets installed on the Mac, not even project-local tools, unless Muse first shows an **INSTALL APPROVAL REQUIRED** block (host, tool and version, source, command, paths, privileges, disk and cost, how to undo) and you approve it. Cloud installs go through one reviewed bootstrap plan per workspace. Every install is logged in `INSTALL-LOG.md`.
 4. **No assumptions.** Every fact the platform uses must be measured, cited or marked unknown. That goes for this plan too: see section 4.
 5. **Small steps you can see.** Each milestone ends with a demo you can run yourself in under five minutes, and a plain-English report: what was built, what's real, what's simulated, and what's unknown.
 6. **Nothing leaves the laptop** (push, publish, cloud builds) without your OK on that specific action.
@@ -43,7 +43,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 - **Replacing the OS needs an unlocked bootloader.** Changing any verified partition breaks its stock signature. So a phone either gets unlocked (and verification disabled, or re-signed with your own key where the phone supports that), or it gets the "on top of Android" fallback.
 - **`fastboot boot` only boots a kernel + ramdisk (a boot image), once, without flashing.** It does not replace the system partition. A temporary test this way only works if the test environment is self-contained in that boot image, or if it's just a boot/kernel test. It also needs an unlocked bootloader, and some phones block it. So the test plan in section 6 has to be designed around this, and checked for your specific phone.
 - **Full Android source builds need x86-64 Linux, around 400 GB of disk and 64 GB of RAM.** Your Mac can't do that. Lighter build paths, and emulator images, can work on the Mac.
-- **The Android Emulator runs on Apple Silicon Macs (arm64 system images).** That's our stand-in phone for StarGate OS until a real one is allowed.
+- **The Android Emulator runs natively on Apple Silicon Macs (arm64 system images).** It needs hardware virtualization, which GitHub Codespaces doesn't provide. So the emulator stand-in phone (M4) needs either one approved Mac install or a cloud machine that supports virtualization (Q11).
 
 ### Open questions (must be answered, not assumed)
 
@@ -56,15 +56,18 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | Q5 | Would you buy a cheap used test phone (a supported model) instead of risking the production one? | You | Before M7 |
 | Q6 | A Linux build machine for full Android builds: cloud VM, home server, or skip? | You | M5 |
 | Q7 | Which emulator image and Android version Muse uses as the stand-in phone | Muse, documented | M4 |
-| Q8 | Can an emulator system image be unpacked, extended with StarGate OS and repacked on the Mac, or does that need Linux too? | Muse, by trying it in M4 and documenting the result | M4 |
+| Q8 | Can an emulator system image be unpacked, extended with StarGate OS and repacked in the Linux codespace (no virtualization needed for that step)? | Muse, by trying it in M4 and documenting the result | M4 |
+| Q9 | How Muse CLI signs in on a headless Linux cloud workspace | Muse docs + M0 | M0 |
+| Q10 | Is `Project-StarGate-Meta-Hackathon` private, and when do we first push to it? | You | M0 |
+| Q11 | Where the emulator runs for M4: one approved Mac install, or a paid cloud VM with virtualization | You (decision card in the project thread) | Before M4 |
 
 ## 5. The path: milestones
 
 Each milestone needs no phone, ends with a demo you run yourself, and is reviewed by Claude and ChatGPT before the next one starts.
 
-### M0: Clean reset (half a day)
-Archive v1 and v2 folders (don't delete them). Create a fresh `stargate` repo. One `.venv`, `INSTALL-LOG.md`, `AGENTS.md` pointing to this plan, and `stargate doctor` making real test calls to Meta (and Baseten if used).
-**Demo:** `stargate doctor` shows green or red for each check. `INSTALL-LOG.md` lists every install.
+### M0: Clean slate + cloud workspace (half a day)
+On the Mac: the old Muse folders go to the Trash (reversible), and you get a read-only install inventory, with no installs. In the cloud: an approved Codespaces proposal, one reviewed bootstrap, a fresh repo, and `stargate doctor` making a real Meta inference call. Full spec: [milestones/M0-clean-reset.md](milestones/M0-clean-reset.md).
+**Demo:** `stargate doctor` in the codespace shows `Meta inference: ok`, and the Mac has nothing new installed.
 
 ### M1: Device profiles and checks (simulated phones)
 A device profile format (every fact has a value, source, and status of measured/inferred/unknown/conflicting). A read-only probe that would collect it over USB, with the command allowlist, tested only against recorded and synthetic outputs. Four contrasting simulated profiles: budget, flagship, old 32-bit, and locked bootloader.
@@ -79,8 +82,8 @@ It ranks how to build the OS for that phone: community tree build / generic syst
 **Demo:** two simulated phones give different ranked plans, and an impossible selection is refused with a reason.
 
 ### M4: A StarGate OS image, built and booted in the emulator
-This is where the image gets built. The builder takes a selection (e.g. Files + Assistant) and produces an emulator system image with the launcher and those modules baked in. It checks the image: format, size fit, and contents matching the selection exactly. Then it boots the image in the Android Emulator on your Mac.
-If Q8 shows the image can't be repacked on the Mac, the fallback is a stock emulator image with StarGate OS installed on top. The plan labels that a **configuration bundle, not an image**, and moves image repacking to the Linux build machine (Q6).
+This is where the image gets built. The builder takes a selection (e.g. Files + Assistant) and produces an emulator system image with the launcher and those modules baked in. It checks the image: format, size fit, and contents matching the selection exactly. Building happens in the cloud workspace. Booting happens in the Android Emulator on whichever host Q11 picks.
+If Q8 shows the image can't be repacked in the codespace, the fallback is a stock emulator image with StarGate OS installed on top. The plan labels that a **configuration bundle, not an image**, and moves image repacking to the Linux build machine (Q6).
 **Demo:** build once with Files + Assistant and once with Files only. Boot each, and see a different home screen. Files serves a share, and Assistant answers with a small model.
 
 ### M5: Real-phone image plan
@@ -131,3 +134,4 @@ Only by your decision, recorded here with the date and reason.
 | 29 Oct 2026 | Plan v1 approved (PR #15) | Clean-slate restart |
 | 29 Oct 2026 | Image building moved into the hackathon scope: M4 now builds and boots a real image in the emulator, and M5 produces real-phone build plans | ChatGPT review: the draft postponed image building, against the agreed priority order (checks → choices → built images) |
 | 29 Oct 2026 | VPN module removed from M6 and made optional and last | You already have working VPN in a separate project, so there's no need to rebuild it here |
+| 29 Oct 2026 | Clean slate and cloud first: the old Muse folders go to the Trash, development moves to Codespaces, and Mac installs need explicit approval | Your direction, recorded by ChatGPT on PR #18 |

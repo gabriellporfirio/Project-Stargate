@@ -1,75 +1,62 @@
-# M0: Clean reset (spec)
+# M0: Clean slate + cloud workspace (spec)
 
-Status: v2, with ChatGPT's review reconciled ([review](../../reviews/2026-10-29-chatgpt-m0-clean-reset.md)) · Planned for Fri 30 Oct · Built on plan v2
+Status: v3, draft. Folds in the [cloud-reset addendum](../../reviews/2026-10-29-chatgpt-m0-cloud-reset.md). Assumes the hosting choice "cloud dev, Mac emulator for M4" is still awaiting your pick. Replaces the local-workspace approach in v2. Planned for Fri 30 Oct.
 
 ## Goal
-Start from a clean, understandable workspace. At the end of M0 you can see where everything lives and what's installed, and Muse has proven it can get a real answer from a Meta model. No product features are built in M0.
+1. The Mac is cleaned: the old Muse hackathon folders go to the Trash, and you get a truthful inventory of what's installed.
+2. A fresh cloud workspace exists, with Muse running in it, and it has proven it can get a real answer from a Meta model.
 
-## Decisions
-1. **Product code repo:** `gabriellporfirio/Project-StarGate-Meta-Hackathon` on GitHub. At execution, Muse checks it still has no branches. A fresh repo is created at `~/Downloads/Projects/stargate` with `main` set explicitly. If that folder already exists, Muse stops and reports it instead of overwriting. Pushing needs your OK each time.
-2. **Old work is archived by moving, safely.** `~/Downloads/Projects/Project-StarGate-Meta-Hackathon` (v1) and `~/Downloads/Projects/stargate-v2` move to `~/Downloads/Projects/_archive/`. Before moving, Muse records each folder's resolved path, git remote, current branch, last commit, and any uncommitted or untracked files, written to `_archive/ARCHIVE-LOG.md`. It refuses to move if the destination already exists. After the move it checks the same facts again and confirms they match. The old `.venv` folders inside are kept but treated as not runnable, since moved virtual environments break.
-3. **Supported Python, kept inside the project.** Python 3.9 reached end of life on 31 Oct 2025, so the Mac's built-in 3.9.6 stays untouched and unused. Target **Python 3.12**. Muse first looks for an existing 3.12 or newer interpreter and records which one and where. If none exists, it **asks you in the chat before installing anything**, proposing a project-local runtime under `stargate/tools/` (for example via `uv` with its install directory set inside the project). Product code stays standard-library only. Setup is exactly: `python3.12 -m venv .venv` → `.venv/bin/pip install -e .` → `stargate doctor`, all recorded in the README.
-4. **The plan is pinned, not "latest".** Muse uses a local clone of this plan repo at `~/Downloads/Projects/Project-Stargate`, checked out at the **exact commit named in the M0 prompt** (the merge commit of this spec). Before starting, it checks the clone's origin, that commit, and that the checkout is clean. If the folder holds something else, it stops and reports. `AGENTS.md` in the product repo records that commit.
+No product features are built in M0, and nothing new is installed on the Mac.
 
-## Steps
-1. **Pre-flight (read-only):** check the plan clone (decision 4), the product repo state on GitHub (decision 1), and the archive destination (decision 2).
-2. **Install inventory (read-only).** Write `INSTALL-LOG.md` with three separate sections:
-   - **Current inventory:** what's installed now in Homebrew, `pip --user`, `~/.local/bin`, global npm and the Python interpreters found, with the exact commands used to check.
-   - **Changes linked to earlier Muse sessions:** only what a record shows (for example Muse's own transcripts or logs, if Muse can read them), each with the record it came from.
-   - **Unknown origin:** everything else. Missing history means "unknown", never "none installed".
-   It never copies shell profiles, credentials or commands containing secrets, only package names, versions and locations. It never invents install or uninstall commands, and removes nothing.
-3. **Archive** per decision 2, and verify.
-4. **Python** per decision 3. Stop and ask if an install is needed.
-5. **Create the product repo** with the files below. Checkpoint commit, no push.
-6. **Implement `stargate doctor`**, the only product code in M0.
-7. **Run the live Meta check once**, record its result in `docs/m0-live-check.md`, and write the plain-English report.
+## Part A: Mac cleanup (no installs)
+Use the prompt in [plan/prompts/muse-clean-slate-and-install-guard.md](../prompts/muse-clean-slate-and-install-guard.md) as written. In summary:
+- Muse resolves and verifies the two old folders (`~/Downloads/Projects/Project-StarGate-Meta-Hackathon`, `~/Downloads/Projects/stargate-v2`), then moves them to the macOS Trash. No wildcards, nothing overwritten, and Trash isn't emptied, so it's reversible. Ambiguous folders are reported, not moved.
+- It takes a read-only inventory of installs in three groups: present now, attributable to Muse by a record, and unknown origin. No secrets, no raw shell profiles.
+- Any uninstall is proposed separately, with its impact, and waits for your OK.
+- The planning repo clone (if any) and your private StarGate/VPN work are left untouched.
 
-## Files in the new product repo
-- `README.md`: what StarGate is, the exact setup commands, and where the plan lives (repo + pinned commit).
-- `AGENTS.md`: rules for Muse. Read the pinned master plan and the current milestone spec first. Never install outside the project without asking in the chat. Log every install in `INSTALL-LOG.md`. Never touch the production phone or the VPN project. Never push.
-- `INSTALL-LOG.md`, `docs/decisions.md`, `docs/m0-live-check.md`.
-- `pyproject.toml`, `.gitignore`, `stargate/`, `tests/`.
+**Done when:** both folders are in the Trash (restorable), you have the cleanup report, and nothing was installed or removed beyond those two moves.
 
-## `stargate doctor` contract
+## Part B: Cloud workspace proposal, then setup
 
-**Checks that must pass (each one failing gives a non-zero exit):**
+### B1. Proposal: you approve this before anything is created
 
-| Check | Pass means |
-|---|---|
-| Interpreter | the venv is active and running Python 3.12 or newer |
-| Plan pin | the plan clone is at the pinned commit and clean |
-| Meta credential | a key was found in the configured source: Keychain item `stargate-meta-api-key`, or `MODEL_API_KEY` if set. It reports which source was used, never the value |
-| Meta inference | one real, small, authenticated request to the documented Meta API (`https://api.meta.ai/v1`, bearer auth) for a configured model. It returns a valid, non-empty answer within the limits below. It reports the endpoint, the model requested and the model returned |
+| Item | Proposal | To verify before approval |
+|---|---|---|
+| Provider | GitHub Codespaces (browser or VS Code) | Muse CLI runs on Linux in Codespaces (Muse documents Linux support) |
+| Starting point | A **blank-template** codespace, so nothing has to be pushed to the empty product repo first. It gets connected to `Project-StarGate-Meta-Hackathon` later, at a push you approve | Whether that repo is private (Q10) |
+| Machine | 4-core / 16 GB RAM / 32 GB storage | Enough for M0–M3, with no Android builds |
+| Cost | Covered by your account's included Codespaces hours and storage while they last | Your remaining included usage on GitHub's billing page |
+| Spending cap | Codespaces spending limit set to **$0**, so it stops rather than bills | That the limit is $0 on your account |
+| Idle shutdown | 30 minutes | |
+| Persistence | Work lives in git. Checkpoint commits stay in the codespace until you approve a push. A stopped codespace keeps its files (and uses storage) until deleted | Retention period setting |
+| Secrets | `MODEL_API_KEY` as a Codespaces user secret scoped to this codespace's repo. It's never written to files. No Mac Keychain, no Mac folder mounts | |
+| Muse login | Muse CLI's own sign-in is separate from the product's Meta API key, and kept separate | How Muse authenticates on a headless Linux machine (Q9) |
 
-Before coding, Muse checks the endpoint, auth header and model-list vs inference paths against the current docs at dev.meta.ai, and records the URLs it checked in `docs/decisions.md`. Listing models counts as discovery only and doesn't pass the inference check.
+### B2. Bootstrap (one reviewable plan inside the codespace)
+Muse proposes a single bootstrap plan: every install in the codespace with its version, source and command. That's one approval, then nothing extra without asking. It runs with its command approvals and sandbox turned on. After bootstrap:
+- the planning repo is cloned read-only and checked out at the **pinned commit named in the prompt**, with the origin and a clean checkout verified
+- `python3 -m venv .venv` runs with the codespace's actual Python (3.12 or newer, path recorded), then `.venv/bin/pip install -e .`
+- the product files are `README.md`, `AGENTS.md`, `INSTALL-LOG.md` (codespace installs), `docs/decisions.md`, `docs/m0-live-check.md`, `pyproject.toml`, `stargate/` and `tests/`
 
-**Limits:** 20-second timeout, at most 1 retry, and a maximum of 16 output tokens. The key is sent only to the Meta API's host.
+### B3. `stargate doctor`
+Same contract as v2, with these changes:
+- **Credential:** read only from the `MODEL_API_KEY` environment variable (the Codespaces secret). There's no Keychain lookup.
+- **Required checks:** the interpreter (3.12+), the plan pin, the Meta credential present, and Meta inference. Inference means one real authenticated request to the documented Meta API that returns a valid, non-empty answer. It reports the endpoint and the model requested/returned. Listing models doesn't count.
+- **Limits:** 20-second timeout, 1 retry, and a small output-token cap within what the model accepts (record the value used).
+- **Result codes:** `ok`, `missing-credential`, `auth-failed`, `quota-or-rate-limited`, `network-error`, `bad-response`, `model-not-available`. Any required failure exits non-zero.
+- **Report-only:** git, free disk, and Baseten (only if both key and model are configured).
+- **Tests:** offline, covering each result code, a secret never appearing in output or logs, exit codes, and a test count above zero.
 
-**Result codes it must tell apart:** `ok`, `missing-credential`, `auth-failed`, `quota-or-rate-limited`, `network-error`, `bad-response`, and `model-not-available`. Each one comes with a one-line plain-English explanation and what to do next.
-
-**Report-only checks (never block):** git version, free disk, and whether adb/fastboot/emulator are present. Baseten runs only if both `BASETEN_API_KEY` (or its Keychain item) and `STARGATE_BASETEN_MODEL` are set. Otherwise it reports "skipped: not configured".
-
-**Removed after review:** blanket network checks of future domains and the dummy Keychain test. Neither one proves model access.
-
-## Tests (offline)
-- Each result code, using a fake HTTP server or a mocked transport. Tests never make a real network call.
-- The secret never appears in stdout, stderr, logs or any written file.
-- An exit code other than zero when a required check fails. Zero only when all required checks pass.
-- An interpreter below 3.12 fails the interpreter check.
-- The test run must report how many tests ran. Zero tests counts as a failure.
-
-## Done when (you can check each yourself)
-- [ ] `cat ~/Downloads/Projects/_archive/ARCHIVE-LOG.md` shows both folders with matching before and after facts, and `git -C ~/Downloads/Projects/_archive/<folder> log -1` works for each.
-- [ ] `INSTALL-LOG.md` has the three sections, the commands used, and no secrets.
-- [ ] `cd ~/Downloads/Projects/stargate && .venv/bin/python --version` shows 3.12 or newer.
-- [ ] `source .venv/bin/activate && stargate doctor` exits 0 and shows `Meta inference: ok` with the endpoint and model.
-- [ ] Running `stargate doctor` with the key removed (`env -u MODEL_API_KEY`, Keychain item absent) shows `missing-credential` and exits non-zero.
+**Done when:**
+- [ ] B1 is approved by you, and the codespace exists with a $0 spending limit and a 30-minute idle timeout.
+- [ ] `INSTALL-LOG.md` lists every codespace install from the approved bootstrap and nothing else.
+- [ ] `stargate doctor` exits 0 with `Meta inference: ok`, the endpoint and the model, and exits non-zero with `missing-credential` when the variable is unset.
 - [ ] `python -m unittest -v` passes with a test count above zero.
-- [ ] `git log` shows the checkpoint commit, `git status` is clean, and nothing was pushed.
-- [ ] `docs/m0-live-check.md` records the live result with the date and model, and no key.
+- [ ] There's a checkpoint commit in the codespace, and nothing has been pushed.
 
 ## Out of scope
-Probes, research, strategy, UI, emulator, any Android SDK install, anything touching a phone, and removing anything found in the inventory.
+Probes, research, strategy, UI, emulator, any Android SDK, anything touching a phone, any Mac install, and any uninstall you haven't approved.
 
 ## Open questions this milestone answers
-Q2 (Meta endpoint and model IDs that work for your key). Q3 only if Baseten is configured.
+Q2 (Meta endpoint and model IDs), Q9 (Muse sign-in in the cloud), Q10 (product repo visibility), and Q3 if Baseten is configured.

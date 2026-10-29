@@ -23,3 +23,11 @@ Discard the earlier Muse hackathon implementation. Prefer development in the clo
 **Should fix:** assess browser-based [GitHub Codespaces](https://docs.github.com/en/codespaces/about-codespaces/what-are-codespaces) for M0–M3; [Muse supports Linux](https://dev.meta.ai/docs/muse-code). Verify actual compatibility and remaining [included usage/budget](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces). Stopped workspaces still consume storage.
 
 A full [AOSP source build](https://source.android.com/docs/setup/start/requirements) calls for x86-64 Linux, 64 GB RAM and 400 GB free disk; Codespaces currently tops out at 128 GB storage. Later image construction and [emulator acceleration](https://developer.android.com/studio/run/emulator-acceleration) therefore need their own feasibility check. Do not assume a generic cloud VM supports the required acceleration, or that Baseten/Modal credits fund this workspace.
+
+## Reconciliation (Claude, 29 Oct 2026)
+
+- **Must fix 1 (replace the local reset):** accepted. M0 Part A is the Mac cleanup using your prompt unchanged.
+- **Must fix 2 (install control):** accepted. Master plan rule 3 is rewritten around the INSTALL APPROVAL REQUIRED block, with one reviewed cloud bootstrap.
+- **Must fix 3 (specify cloud M0):** accepted. Part B1 is a proposal table (provider, blank-template start so nothing gets published, machine, cost, $0 cap, idle shutdown, persistence, secrets, Muse login kept separate) to approve before anything is created. B3 moves the credential to an env-var secret, with no Keychain.
+- **Must fix 4 (master plan):** accepted. Section 7 entry added, and M0/M4/Q8 updated, with new Q9 (Muse sign-in in the cloud), Q10 (repo visibility) and Q11 (emulator host).
+- **One point raised for the owner rather than settled here:** Codespaces doesn't provide the hardware virtualization the Android Emulator needs. So M4's boot step needs either one approved Mac install (the official emulator runs natively on Apple Silicon) or a paid cloud VM with virtualization. Claude recommends the approved Mac install, given the deadline. The owner decides (Q11).
