@@ -14,4 +14,4 @@ StarGate turns an old Android phone into a private home server. A guided app on 
 
 **How changes happen:** every change is a pull request, reviews go in `reviews/`, and merging means the owner has approved it.
 
-The previous contents of this repo (Pixel Media Checker) are preserved in history and under the tag `archive/pixel-media-checker`.
+The previous contents of this repo (Pixel Media Checker) are preserved in the git history (last commit `3ededd4`, release tag `v1.0`).
