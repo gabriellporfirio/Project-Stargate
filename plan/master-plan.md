@@ -70,7 +70,7 @@ On the Mac: the old Muse folders go to the Trash (reversible), and you get a rea
 **Demo:** `stargate doctor` in the codespace shows `Meta inference: ok`, and the Mac has nothing new installed.
 
 ### M1: Device profiles and checks (simulated phones)
-A device profile format (every fact has a value, source, and status of measured/inferred/unknown/conflicting). A read-only probe that would collect it over USB, with the command allowlist, tested only against recorded and synthetic outputs. Four contrasting simulated profiles: budget, flagship, old 32-bit, and locked bootloader.
+A device profile format (every fact has a value, source, and status of measured/inferred/unknown/conflicting). A read-only probe that would collect it over USB, with the command allowlist, tested only against recorded and synthetic outputs. Four contrasting simulated profiles: budget, flagship, old 32-bit, and locked bootloader. Full spec: [milestones/M1-device-profiles.md](milestones/M1-device-profiles.md).
 **Demo:** `stargate scan --sim budget` prints a readable phone report with unknowns shown.
 
 ### M2: Research agent (Meta Llama)

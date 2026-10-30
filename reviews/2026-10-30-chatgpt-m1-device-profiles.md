@@ -1,0 +1,17 @@
+# ChatGPT review: M1 device profiles
+
+Reviewed PR #21 at `cb6e87c33db91485c2591176961ee058138a1326` on 30 October 2026. **Verdict: request changes.** The simulated-only scope and Mac/device protections fit the agreed plan. This is a specification review; no product tests or device probes were run. PR #20 is excluded.
+
+1. **Must fix — define the data contract (§1).** A single `source` cannot unambiguously represent conflicting values. Specify field names, types, units (RAM/storage in bytes), schema version, and status-dependent validation. Unknown facts need null values and reasons; conflicts need both typed values with their own evidence; inferences need rule IDs and input references. Include valid/invalid examples. Otherwise M2/M3 must invent incompatible interpretations.
+
+2. **Must fix — separate unlock support from permission (§1, locked fixture).** The fact list contains “OEM unlock supported,” but the fixture promises “unlock not allowed.” These differ from each other and from current lock state. [AOSP](https://source.android.com/docs/core/architecture/bootloader/locking_unlocking) distinguishes build-time `ro.oem_unlock_supported`, current lock state, and unlock permission. Add separate facts and fixtures; unreadable permission stays unknown. A locked phone is not proof that it can never be unlocked. Do not introduce fastboot or real probes.
+
+3. **Must fix — distinguish capacity/evidence from usable capability (§1).** Free `/data` storage does not establish system/super image capacity; [dynamic partitions](https://source.android.com/docs/core/ota/dynamic_partitions/implement) have separate size constraints. Reserve typed unknown capacity fields, or explicitly defer that assessment and prohibit a “fits” conclusion without it. Likewise kernel configuration proves build configuration, not that an unrooted service can use the feature: distinguish built-in/module/disabled/unknown and runtime usability unknown. [TUN](https://docs.kernel.org/networking/tuntap.html), for example, also needs device access and suitable privileges. Keep this as profile semantics, not a new fit engine.
+
+4. **Should fix — make probe guarantees testable (§2, acceptance).** Define numeric time/output limits, including decompression if used. Test rejection of every non-allowlisted command before transport invocation, zero host-process execution, timeout/permission-denied reasons, and identifier leakage through evidence and errors as well as values. Missing properties are not negative capability evidence; [VNDK properties](https://source.android.com/docs/core/architecture/vndk) are removed for vendor/product partitions built for Android 15.
+
+5. **Should fix — reconcile the baseline and network rules (§5, out of scope).** M0’s results review is being redone: use its accepted full checkpoint SHA before implementation. “Doctor must pass live” contradicts “any Meta call” being excluded. Explicitly allow one bounded doctor regression check, or defer it; scans and automated tests remain offline.
+
+6. **Should fix — preserve demo evidence.** `head -40` can truncate JSON; `unittest | tail` hides the test exit status. Validate complete JSON for all four fixtures, run tests directly, and assert the expected non-zero real-device refusal.
+
+**Top three priorities:** data contract → unlock distinctions → capacity/capability semantics. Defer unrelated M0 refactoring if it threatens the M1 schedule.
