@@ -64,6 +64,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | Q11 | Where the emulator runs for M4: one approved Mac install, or a paid cloud VM with virtualization | You (decision card in the project thread) | Before M4 |
 | Q12 | The hackathon theme and its problem statements: which one StarGate answers | You (from the rules) | Before the video script |
 | Q13 | The official rules URL, plus the submission requirements: video length and access, deliverables, repo visibility, attribution and licensing, deadline timezone | You (from the rules) | Before the video script |
+| Q14 | Does `muse-spark-1.3` support tool calling and structured JSON output on the Meta API? This decides agent mode or pipeline mode for research | Muse, from the M2 spike | M2 |
 
 ## 5. The path: milestones
 
@@ -79,6 +80,7 @@ A device profile format (every fact has a value, source, and status of measured/
 
 ### M2: Research agent (Meta Llama)
 Given a phone's identity (model or codename, no phone needed), the agent searches allowlisted sources: community OS builds and device trees, stock firmware, Treble reports, and AI models that fit. It returns a cited report. Code checks each link and repo actually exists. Rejected or unverified claims are shown.
+Full spec: [milestones/M2-research-agent.md](milestones/M2-research-agent.md).
 **Demo:** `stargate research "<a real model name>"` shows live search steps and a cited report.
 
 ### M3: Strategy and fit engines
