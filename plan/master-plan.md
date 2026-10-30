@@ -43,6 +43,8 @@ StarGate turns an old Android phone into a private home server. You run the Star
 - **Replacing the OS needs an unlocked bootloader.** Changing any verified partition breaks its stock signature. So a phone either gets unlocked (and verification disabled, or re-signed with your own key where the phone supports that), or it gets the "on top of Android" fallback.
 - **`fastboot boot` only boots a kernel + ramdisk (a boot image), once, without flashing.** It does not replace the system partition. A temporary test this way only works if the test environment is self-contained in that boot image, or if it's just a boot/kernel test. It also needs an unlocked bootloader, and some phones block it. So the test plan in section 6 has to be designed around this, and checked for your specific phone.
 - **Full Android source builds need x86-64 Linux, around 400 GB of disk and 64 GB of RAM.** Your Mac can't do that. Lighter build paths, and emulator images, can work on the Mac.
+- **Muse's command sandbox can't start inside Codespaces** (it needs a Linux feature, unprivileged user namespaces, that Codespaces turns off). Muse therefore runs each command outside the sandbox, and you approve every one. That's acceptable because the codespace is a disposable cloud machine with nothing of yours on it.
+- **`muse-spark-1.3` is a reasoning model:** it spends part of its answer budget thinking before it replies. A very small token cap (64) produced an empty answer, so every Meta call needs a cap with room for that (M0 uses 256).
 - **The Android Emulator runs natively on Apple Silicon Macs (arm64 system images).** It needs hardware virtualization, which GitHub Codespaces doesn't provide. So the emulator stand-in phone (M4) needs either one approved Mac install or a cloud machine that supports virtualization (Q11).
 
 ### Open questions (must be answered, not assumed)
@@ -50,14 +52,14 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | # | Question | Who answers | Needed by |
 |---|---|---|---|
 | Q1 | ~~Hackathon deadline~~ Answered: submissions due Wed 4 Nov, 9:00 PM. Submission requirements still to confirm | You | Now |
-| Q2 | Which Meta model IDs and endpoint the Meta API gives your key | Muse, from a live call | M0 |
+| Q2 | ~~Which Meta model IDs and endpoint the Meta API gives your key~~ Answered in M0 (30 Oct): `POST https://api.meta.ai/v1/chat/completions`, Bearer key. The key lists `muse-spark-1.3`, `muse-spark-1.2`, `muse-spark-1.1`, two `-contributor` variants, `muse-wonder-1.0`, `muse-image-1.0`, `muse-voice-transcribe-1.0` and `sam-3.1`. The product uses `muse-spark-1.3` | Muse, from a live call | M0 |
 | Q3 | Which model you have on Baseten, and what we'd use it for | You + Muse | M2 |
 | Q4 | Your production phone: model, Android version, bootloader unlocked? | You | M7 planning |
 | Q5 | Would you buy a cheap used test phone (a supported model) instead of risking the production one? | You | Before M7 |
 | Q6 | A Linux build machine for full Android builds: cloud VM, home server, or skip? | You | M5 |
 | Q7 | Which emulator image and Android version Muse uses as the stand-in phone | Muse, documented | M4 |
 | Q8 | Can an emulator system image be unpacked, extended with StarGate OS and repacked in the Linux codespace (no virtualization needed for that step)? | Muse, by trying it in M4 and documenting the result | M4 |
-| Q9 | How Muse CLI signs in on a headless Linux cloud workspace | Muse docs + M0 | M0 |
+| Q9 | ~~How Muse CLI signs in on a headless Linux cloud workspace~~ Answered in M0 (30 Oct): the normal Meta account login works inside the codespace, with no API key needed for Muse | Muse docs + M0 | M0 |
 | Q10 | Is `Project-StarGate-Meta-Hackathon` private, and when do we first push to it? | You | M0 |
 | Q11 | Where the emulator runs for M4: one approved Mac install, or a paid cloud VM with virtualization | You (decision card in the project thread) | Before M4 |
 
@@ -136,3 +138,4 @@ Only by your decision, recorded here with the date and reason.
 | 29 Oct 2026 | VPN module removed from M6 and made optional and last | You already have working VPN in a separate project, so there's no need to rebuild it here |
 | 29 Oct 2026 | Clean slate and cloud first: the old Muse folders go to the Trash, development moves to Codespaces, and Mac installs need explicit approval | Your direction, recorded by ChatGPT on PR #18 |
 | 30 Oct 2026 | M0 Part A done: the old folders are in the Trash and nothing was installed. Part B now starts the codespace from the product repo (README + devcontainer) | Codespaces secrets only reach codespaces linked to a repo |
+| 30 Oct 2026 | M0 Part B done: `stargate doctor` got a real answer from `muse-spark-1.3`, 36 offline tests pass, and the only download was setuptools 84.2.1 (logged). Q2 and Q9 answered. `muse-spark-1.3` is the product's default Meta model | Live results from the codespace, reviewed in [reviews/2026-10-30-claude-m0-part-b-report.md](../reviews/2026-10-30-claude-m0-part-b-report.md) |
