@@ -53,12 +53,8 @@ A versioned JSON format with a validator, in the same style as `profile-v1`:
 - **`steps`**: the ordered log of what was asked, which tool ran, what came back (status and size), and what was rejected and why.
 - **Rule:** only `verified` claims may be used by M3. "Verified" means the citation checks out. It does **not** mean the claim is true in every respect (for example, a device tree existing doesn't prove it builds). The report says so.
 
-## 3b. Second-opinion audit (optional, only if the spike passes)
-After the report is built, `muse-spark-open-1026` on Baseten gets each **verified** claim together with its fetched excerpt, and answers whether the excerpt actually supports the claim: `supports`, `does_not_support` or `unclear`, with one sentence of reasoning. It never adds new claims.
-- `does_not_support` downgrades a claim to `unverified`, and the reason is kept. `supports` doesn't upgrade anything: the citation check stays the gate.
-- The audit is shown as its own live step ("second Meta model auditing 7 claims…").
-- If Baseten fails or isn't configured, the report says "audit skipped" and everything else still works.
-- Budget: at most one audit call per claim and 20 per run.
+## 3b. Second-opinion audit with Baseten (development only)
+**Product rule:** the product users run needs only a Meta API key. Baseten (`muse-spark-open-1026`) is never called by `stargate` itself. It's used only during development, through a separate script outside the product package. Its exact role (auditing research data and/or reviewing code) is being decided by the owner, and this section gets filled in before M2 starts.
 
 ## 4. `stargate research`
 - `stargate research --device "<name>"` (or `--codename`, or `--sim`) shows the steps **live**, one line each: searching, fetched, verified, rejected and why. It ends with a readable summary grouped by topic, with each claim's status and its link.
@@ -78,7 +74,7 @@ After the report is built, `muse-spark-open-1026` on Baseten gets each **verifie
 
 ## Done when
 - [ ] `docs/m2-spike.md` records the tool-calling and structured-output results, the mode chosen, and the Baseten findings (spike points 4–7).
-- [ ] If the Baseten spike passed: the live run shows the audit step, and a recorded test shows a claim downgraded by `does_not_support`. If it didn't pass: the report shows "audit skipped" and why.
+- [ ] A test proves the `stargate` package never calls Baseten and never reads `BASETEN_API_KEY`.
 - [ ] A live `stargate research` run on the approved public device shows live steps and ends with at least one `verified` claim per topic it found, each with a working link.
 - [ ] The same run, or a recorded test, shows at least one `rejected` claim with its reason.
 - [ ] `--json` output validates against `research-v1`.
@@ -90,7 +86,7 @@ After the report is built, `muse-spark-open-1026` on Baseten gets each **verifie
 Ranking strategies (M3), fit decisions (M3), building anything, real phones, and voice and photo features.
 
 ## Network use allowed in M2
-The Meta API, the Baseten endpoint for `muse-spark-open-1026` (section 3b), and the allowlisted research domains in section 2, all within the budgets. Nothing else.
+Product: the Meta API and the allowlisted research domains in section 2, within the budgets. Development-only scripts may also call Baseten (section 3b). Nothing else.
 
 ## Demo (under 5 minutes)
 ```
