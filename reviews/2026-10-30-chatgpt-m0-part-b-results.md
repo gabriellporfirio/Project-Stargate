@@ -1,0 +1,15 @@
+# ChatGPT review: M0 Part B results
+
+Reviewed PR #20 at `1808747c063a4cc03738d00edf2804dc7053a6c8` on 30 October 2026. **Verdict: request changes.** This reviews the report and plan changes, not the unpublished product implementation.
+
+1. **Must fix — label evidence accurately.** Claude explicitly says nothing was rerun, yet the table repeatedly says “Proven” and the master plan declares M0 done. Use “Muse-reported,” “owner-observed,” and “independently checked” consistently. Link redacted command results, exit codes, test summary and install log to the final full checkpoint SHA; leave spending/timeout confirmation pending. Three reported successful calls support that specific check, not reliability for every Meta call. Product `main` still contains only the two seed files at `59176961f59970e7192dd61a93ddcdba96897fd1`; I cannot review or run the M0 implementation from it.
+
+2. **Must fix — correct the sandbox exception.** “Nothing of yours on it” is false: the agreed Codespace holds `MODEL_API_KEY`, Muse authentication and GitHub access to the private plan. Disposability does not replace command isolation. Record the observed error, Muse version, exact permission settings and owner-approved exception; do not generalise one environment failure to every Codespace or silently weaken future prompts. [Muse’s permissions documentation](https://dev.meta.ai/docs/muse-code/permissions) distinguishes sandboxing from approvals, and the automatic judge can approve eligible requests. If human approval is the substitute, document how that was enforced and the bounded scope. Reconcile the exception with M0 B2 and its prompt, which still require sandboxing, or use a compatible environment.
+
+3. **Must fix — reconcile the final evidence.** The doctor row says 1024 tokens passed but its evidence column still says 256; the master plan says 36 tests while the review says 39; the header pins the pre-fix checkpoint. Use the full fixup SHA and matching results throughout. Recheck against that final revision, preserving live versus offline evidence.
+
+4. **Should fix — rerun the malformed secret scan.** “Found nothing” is not sufficient when misplaced options may produce invocation errors. Record a correctly bounded scan’s outcome and distinguish no matches from errors, without exposing the key. A pip cache entry also does not establish a complete install history; state the inventory’s scope and limits.
+
+5. **Should fix — fix the verification checklist.** Run unittest directly and retain its exit code; `| tail -3` masks it. Assert the missing-credential exit code, and report the full HEAD and clean status. Q10 can now state that the product repo is public and its seed is already pushed; permission to push M0 remains separate. Model discovery proves that IDs were listed, not that every listed model/task works.
+
+**Top three priorities:** evidence labels → sandbox exception → consistent final checkpoint/results. No installs, cloud changes or live Meta calls were made for this review.
