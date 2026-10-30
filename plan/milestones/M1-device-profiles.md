@@ -1,6 +1,6 @@
 # M1: Device profiles and checks (spec)
 
-Status: v2, which folds in [ChatGPT's review](../../reviews/2026-10-30-chatgpt-m1-device-profiles.md) (all six points). Planned for Fri 30 Oct, after M0. Builds on the M0 product repo at the accepted checkpoint: fixup commit `1673b97` on top of `b214429`. Muse records the full SHA it starts from.
+Status: v2.1, which folds in [the follow-up review](../../reviews/2026-10-30-chatgpt-m1-device-profiles-v2.md) and [ChatGPT's review](../../reviews/2026-10-30-chatgpt-m1-device-profiles.md) (all six points). Planned for Fri 30 Oct, after M0. Builds on the M0 product repo at the accepted checkpoint: fixup commit `1673b97` on top of `b214429`. The M1 prompt carries its **full** SHA, and Muse stops if HEAD doesn't match it.
 
 ## Goal
 StarGate can describe a phone honestly. It has a **device profile** format in which every fact says where it came from and how sure we are. It has a **read-only probe** that would collect those facts from a real phone over USB, and four **simulated phones** to test against. M2 (research) and M3 (strategy and fit) take their input from this profile, so the format has to be exact enough that they can't read it two ways.
@@ -17,10 +17,10 @@ A JSON Schema file plus a validator. The top level holds `schema_version: "profi
 | `status` | `measured` / `inferred` / `unknown` / `conflicting` | Required |
 | `value` | The fact's declared type (table 1c) | Required. Must be `null` when `unknown` or `conflicting` |
 | `unit` | `bytes`, `count` or `null` | Fixed per fact (table 1c). Sizes are always whole bytes |
-| `evidence` | List of evidence items (1b) | At least one for `measured`. At least two, with different values, for `conflicting` |
+| `evidence` | List of evidence items (1b) | At least one for `measured`. For `conflicting`, the evidence lives on each candidate instead |
 | `unknown_reason` | `not_exposed`, `property_missing`, `permission_denied`, `timeout`, `output_too_large`, `malformed_output`, `not_probed_in_m1` or `deferred` | Required when `unknown`, otherwise absent |
 | `inference` | `{ "rule_id": string, "inputs": [fact IDs] }` | Required when `inferred`, otherwise absent. Each rule ID is listed in `docs/inference-rules.md` |
-| `candidates` | List of `{ "value", "evidence" }` | Required when `conflicting` (each candidate is typed like `value`), otherwise absent |
+| `candidates` | List of `{ "value", "evidence" }` | Required when `conflicting`, otherwise absent. At least two candidates, each typed like `value` and each with at least one evidence item, and the candidate **values must be distinct** (no two equal after normalising the unit) |
 
 ### 1b. One evidence item
 `{ "probe_id": string, "command": string (exactly as in the allowlist), "excerpt": string (the line used, max 200 characters, after redaction), "observed_at": UTC time }`
@@ -55,7 +55,7 @@ A JSON Schema file plus a validator. The top level holds `schema_version: "profi
 - A locked bootloader (`boot.bootloader_locked: true`) is not proof that a phone can never be unlocked. Only `boot.oem_unlock_supported` and `boot.oem_unlock_allowed` speak to that.
 
 ### 1e. Examples
-`schemas/examples/` holds at least: a valid measured fact, a valid unknown fact with a reason, a valid inferred fact, a valid conflicting fact with two candidates, and invalid ones (unknown with a value, conflicting with one candidate, measured with no evidence, a size given as "2 GB" instead of bytes). Tests run the validator over all of them.
+`schemas/examples/` holds at least: a valid measured fact, a valid unknown fact with a reason, a valid inferred fact, a valid conflicting fact with two candidates, and invalid ones (unknown with a value, conflicting with one candidate, conflicting with two equal values, measured with no evidence, a size given as "2 GB" instead of bytes). Tests run the validator over all of them.
 
 Muse checks every Android property name against official Android documentation or AOSP source, and lists each probe with its source in `docs/probes.md`.
 
@@ -85,6 +85,7 @@ Rule: any phone-related fact M1 code relies on must come from the probe output, 
 - `--json` prints the complete validated profile.
 - `stargate scan` without `--sim` exits with code 3 and "real devices are not enabled in M1".
 - Scans and all automated tests are offline. They make no network calls.
+- While building, Muse **may** read documentation and source code online (Android docs, AOSP source, the pinned plan repo) to check property names. That's read-only research. The product itself makes no calls.
 
 ## 5. Allowed network use, and housekeeping
 - The only network call allowed in M1 is **one** `stargate doctor` regression run at the end, to show M0 still works live. Nothing else calls Meta.
