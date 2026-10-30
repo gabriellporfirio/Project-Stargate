@@ -1,13 +1,15 @@
 # M0 Part B: review of Muse's report
 
-30 Oct 2026 · Reviewer: Claude · v2, which folds in [ChatGPT's review](2026-10-30-chatgpt-m0-part-b-results.md).
+30 Oct 2026 · Reviewer: Claude · v3, which folds in [ChatGPT's review](2026-10-30-chatgpt-m0-part-b-results.md) and [its re-review](2026-10-30-chatgpt-m0-part-b-results-v2.md).
 Plan commit used by Muse: `b498e7037e1e064fd6db8ff73687ecc5a81e449b`.
 Product checkpoint: `b214429…` plus fixup `1673b97…`. Full final SHA (from the owner): `1673b97fb97d2612f42fa28c6fe07caa2a937bb3`. Both commits are in the codespace only and not pushed, so neither Claude nor ChatGPT can inspect the code. The product repo's `main` still holds only the two seed files (`59176961…`).
 
 ## Evidence labels
 - **Muse-reported:** Muse ran it and printed the result. Nobody else has seen the output directly.
 - **Owner-observed:** the owner ran it (or watched it run) and saw the output.
-- **Independently checked:** Claude or ChatGPT inspected the code or reran it. Nothing is in this category yet.
+- **Independently checked:** Claude or ChatGPT actually inspected the code **and** reran the check successfully. Nothing is in this category yet. Pushing the code only makes it **available** for review. A label moves up only after the matching check has passed.
+
+Settings (spending limit, idle timeout) and install evidence are tracked separately from the check results.
 
 ## Done-when list
 
@@ -20,7 +22,9 @@ Product checkpoint: `b214429…` plus fixup `1673b97…`. Full final SHA (from t
 | `python -m unittest -v` passes with a count above zero | Muse-reported, at the fixup commit | 39 offline tests pass. The earlier 36 was before the fixup |
 | Checkpoint commit in the codespace, nothing pushed | Muse-reported | `b214429` plus fixup `1673b97fb97d2612f42fa28c6fe07caa2a937bb3`, clean tree. |
 
-**Verdict:** M0 Part B is **Muse-reported complete**. It moves to "owner-observed" once the owner runs the check below, and to "independently checked" if the code is pushed for review (Q10).
+**Verdict:** M0 Part B is **Muse-reported complete**. Each row moves to "owner-observed" when the owner runs the matching line of the check below and sees it pass. A row only becomes "independently checked" once the code is pushed (Q10) **and** a reviewer has inspected it and rerun that check successfully.
+
+**Tracked separately:** the $0 spending limit and the 30-minute idle timeout (owner confirmation pending), and install evidence (Muse-reported, with the limits noted in the table).
 
 ## Points
 
@@ -29,7 +33,8 @@ Product checkpoint: `b214429…` plus fixup `1673b97…`. Full final SHA (from t
    - **Settings in force:** `muse --approval-mode on-request --approval-judge on`. **Note:** with the judge on, Muse's automatic judge can approve some requests by itself, so "the owner approved every command" is **not** established.
    - **What the owner approved (30 Oct, in the project thread):** read-only checks could retry outside the sandbox. Anything that writes, installs or touches the network beyond the Meta call needed the owner's explicit OK, and the M0 batch (steps 0–8) was approved as a whole.
    - **What's at stake:** the codespace holds the `MODEL_API_KEY` secret, Muse's sign-in, and GitHub access to the private plan repo. Being disposable doesn't make up for losing command isolation.
-   - **For M1 onwards:** keep approvals on with the **judge off** (exact flag to confirm in Muse's [permissions docs](https://dev.meta.ai/docs/muse-code/permissions)), so every command outside the sandbox waits for the owner. Keep each milestone's network use bounded. M0's spec and prompt keep their original wording as historical records. The exception is logged in the master plan's section 7.
+   - **What Muse's [permissions docs](https://dev.meta.ai/docs/muse-code/permissions) say (read 30 Oct):** `--approval-mode on-request` (the default) only stops for dangerous or external-execution patterns, and safe commands pass silently. `--approval-mode untrusted` stops for **every shell command without a matching allow rule**. `--approval-judge off` sends every review decision to the person instead of the automatic judge. File reads, and file writes inside the workspace, never prompt in any mode. The docs say Muse **refuses** shell commands when it can't confirm the sandbox, and they don't describe the per-command "retry outside the sandbox" path Muse actually used here. So that path is **undocumented**, and how it behaves with the judge off is unverified.
+   - **For M1 onwards (proposal):** run `muse --approval-mode untrusted --approval-judge off`, with no allow rules added. Even so, "every command prompts" isn't guaranteed: file edits inside the workspace don't prompt, and the outside-sandbox path is undocumented. So **before M1 work starts**, the owner records `muse --version` and does one harmless test: ask Muse to run `echo approval-test` and confirm that a prompt appears and the command waits for them. If no prompt appears, M1 stops and the exception is reconsidered (for example a different environment). Each milestone's network use stays bounded in its spec. M0's spec and prompt keep their original wording as historical records. The exception is logged in the master plan's section 7.
 2. **Should fix: the product's model choice is a decision.** `muse-spark-1.3` was picked from the live model list. It's a reasoning model, and its thinking varies run to run, so token caps need headroom (now 1024). Recorded in section 7. Model discovery shows which IDs were **listed**, not that each one works for every task.
 3. **Should fix: rerun the key-leak scan correctly.** The scan I gave in the approval message put `--` in the wrong place, so `--exclude-dir` was read as paths. That can produce errors, and "found nothing" can't be told apart from an error. The corrected scan is in the owner check below. grep's exit code 1 means no matches, 0 means a match was found, and 2 means an error.
 4. **Optional: doctor code size.** `doctor.py` is about 475 lines. Splitting out the Meta client and redaction is optional in M1.
@@ -45,6 +50,6 @@ Each line prints its exit code, so a failure can't hide.
 .venv/bin/stargate doctor; echo "doctor exit $?"
 env -u MODEL_API_KEY .venv/bin/stargate doctor; echo "no-key exit $? (expect 2)"
 .venv/bin/python -m unittest; echo "tests exit $?"
-grep -rlF --exclude-dir=.venv --exclude-dir=.git -e "$MODEL_API_KEY" . ; echo "key-scan exit $? (1 = no matches, 2 = error)"
+if [ -n "${MODEL_API_KEY:-}" ]; then grep -rlF --exclude-dir=.venv --exclude-dir=.git -e "$MODEL_API_KEY" . ; echo "key-scan exit $? (1 = no matches, 0 = FOUND, 2 = error)"; else echo "key-scan SKIPPED: MODEL_API_KEY is unset or empty"; fi
 git rev-parse HEAD && git status --short; echo "status exit $?"
 ```
