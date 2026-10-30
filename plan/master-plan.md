@@ -53,7 +53,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 |---|---|---|---|
 | Q1 | ~~Hackathon deadline~~ Answered: submissions due Wed 4 Nov, 9:00 PM. Submission requirements still to confirm | You | Now |
 | Q2 | ~~Which Meta model IDs and endpoint the Meta API gives your key~~ Answered in M0 (30 Oct): `POST https://api.meta.ai/v1/chat/completions`, Bearer key. The key lists `muse-spark-1.3`, `muse-spark-1.2`, `muse-spark-1.1`, two `-contributor` variants, `muse-wonder-1.0`, `muse-image-1.0`, `muse-voice-transcribe-1.0` and `sam-3.1`. The product uses `muse-spark-1.3` | Muse, from a live call | M0 |
-| Q3 | Which model you have on Baseten, and what we'd use it for | You + Muse | M2 |
+| Q3 | Partly answered (30 Oct): the hackathon Baseten key works only with `meta-models/muse-spark-open-1026`. Proposed use: a second-opinion audit of research claims (M2 spec 3b). Endpoint, features and billing are checked in the M2 spike | You + Muse | M2 |
 | Q4 | Your production phone: model, Android version, bootloader unlocked? | You | M7 planning |
 | Q5 | Would you buy a cheap used test phone (a supported model) instead of risking the production one? | You | Before M7 |
 | Q6 | A Linux build machine for full Android builds: cloud VM, home server, or skip? | You | M5 |

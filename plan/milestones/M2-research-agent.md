@@ -19,6 +19,12 @@ The result picks the mode:
 
 Both modes produce the same report format and the same live step display. This is Q14 in the master plan.
 
+The spike also checks the **Baseten** model (Q3). The owner's hackathon Baseten key works only with `meta-models/muse-spark-open-1026` (owner, 30 Oct). Muse checks against Baseten's current docs, without assuming anything:
+4. the endpoint URL and auth for that model, with the key read from a `BASETEN_API_KEY` Codespaces secret and never printed
+5. whether it accepts the same chat request shape, and whether it supports tool calling or JSON output
+6. how billing works for this key (per token or per running deployment), so the $100 credit isn't burned by an idle deployment
+7. whether "open" means downloadable weights, and if so, the model's size. That decides whether it could ever be a candidate for the on-phone Assistant (M3 fit engine), which is unlikely but worth recording
+
 ## 1. Inputs and privacy
 - **Input:** either `--sim <fixture>` (identity taken from an M1 profile) or `--device "<manufacturer> <model>"` / `--codename <codename>`.
 - Simulated fixtures carry invented identities, so live research uses a **real, public device name** for the demo, for example a well-documented older phone. Muse proposes one and the owner approves it. It must not be the owner's own phones.
@@ -47,6 +53,13 @@ A versioned JSON format with a validator, in the same style as `profile-v1`:
 - **`steps`**: the ordered log of what was asked, which tool ran, what came back (status and size), and what was rejected and why.
 - **Rule:** only `verified` claims may be used by M3. "Verified" means the citation checks out. It does **not** mean the claim is true in every respect (for example, a device tree existing doesn't prove it builds). The report says so.
 
+## 3b. Second-opinion audit (optional, only if the spike passes)
+After the report is built, `muse-spark-open-1026` on Baseten gets each **verified** claim together with its fetched excerpt, and answers whether the excerpt actually supports the claim: `supports`, `does_not_support` or `unclear`, with one sentence of reasoning. It never adds new claims.
+- `does_not_support` downgrades a claim to `unverified`, and the reason is kept. `supports` doesn't upgrade anything: the citation check stays the gate.
+- The audit is shown as its own live step ("second Meta model auditing 7 claims…").
+- If Baseten fails or isn't configured, the report says "audit skipped" and everything else still works.
+- Budget: at most one audit call per claim and 20 per run.
+
 ## 4. `stargate research`
 - `stargate research --device "<name>"` (or `--codename`, or `--sim`) shows the steps **live**, one line each: searching, fetched, verified, rejected and why. It ends with a readable summary grouped by topic, with each claim's status and its link.
 - `--json` prints the validated report.
@@ -64,7 +77,8 @@ A versioned JSON format with a validator, in the same style as `profile-v1`:
 - Model output never becomes a command: there is no code path from report text to execution.
 
 ## Done when
-- [ ] `docs/m2-spike.md` records the tool-calling and structured-output results, and the mode chosen.
+- [ ] `docs/m2-spike.md` records the tool-calling and structured-output results, the mode chosen, and the Baseten findings (spike points 4–7).
+- [ ] If the Baseten spike passed: the live run shows the audit step, and a recorded test shows a claim downgraded by `does_not_support`. If it didn't pass: the report shows "audit skipped" and why.
 - [ ] A live `stargate research` run on the approved public device shows live steps and ends with at least one `verified` claim per topic it found, each with a working link.
 - [ ] The same run, or a recorded test, shows at least one `rejected` claim with its reason.
 - [ ] `--json` output validates against `research-v1`.
@@ -73,10 +87,10 @@ A versioned JSON format with a validator, in the same style as `profile-v1`:
 - [ ] No installs (or each one listed and approved). One checkpoint commit, and nothing pushed without the owner's OK.
 
 ## Out of scope
-Ranking strategies (M3), fit decisions (M3), building anything, real phones, voice and photo features, and Baseten (unless Q3 is answered).
+Ranking strategies (M3), fit decisions (M3), building anything, real phones, and voice and photo features.
 
 ## Network use allowed in M2
-The Meta API, plus the allowlisted research domains in section 2, within the budgets. Nothing else.
+The Meta API, the Baseten endpoint for `muse-spark-open-1026` (section 3b), and the allowlisted research domains in section 2, all within the budgets. Nothing else.
 
 ## Demo (under 5 minutes)
 ```
