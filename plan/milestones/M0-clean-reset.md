@@ -1,6 +1,6 @@
 # M0: Clean slate + cloud workspace (spec)
 
-Status: v3, draft. Folds in the [cloud-reset addendum](../../reviews/2026-10-29-chatgpt-m0-cloud-reset.md). Assumes the hosting choice "cloud dev, Mac emulator for M4" is still awaiting your pick. Replaces the local-workspace approach in v2. Planned for Fri 30 Oct.
+Status: v3.1 (Part B now starts from the product repo instead of a blank codespace). Folds in the [cloud-reset addendum](../../reviews/2026-10-29-chatgpt-m0-cloud-reset.md). Assumes the hosting choice "cloud dev, Mac emulator for M4" is still awaiting your pick. Replaces the local-workspace approach in v2. Planned for Fri 30 Oct.
 
 ## Goal
 1. The Mac is cleaned: the old Muse hackathon folders go to the Trash, and you get a truthful inventory of what's installed.
@@ -24,7 +24,7 @@ Use the prompt in [plan/prompts/muse-clean-slate-and-install-guard.md](../prompt
 | Item | Proposal | To verify before approval |
 |---|---|---|
 | Provider | GitHub Codespaces (browser or VS Code) | Muse CLI runs on Linux in Codespaces (Muse documents Linux support) |
-| Starting point | A **blank-template** codespace, so nothing has to be pushed to the empty product repo first. It gets connected to `Project-StarGate-Meta-Hackathon` later, at a push you approve | Whether that repo is private (Q10) |
+| Starting point | The product repo gets a README (added on GitHub's website) plus `.devcontainer/devcontainer.json`, and the codespace is created from that repo. A blank-template codespace can't receive repo-scoped secrets, so this replaces it. The devcontainer asks for **read-only** access to the private Project-Stargate plan repo, so Muse can check out the pinned plan | Repo visibility (Q10): fine either way, but everything pushed is visible if it's public |
 | Machine | 4-core / 16 GB RAM / 32 GB storage | Enough for M0–M3, with no Android builds |
 | Cost | Covered by your account's included Codespaces hours and storage while they last | Your remaining included usage on GitHub's billing page |
 | Spending cap | Codespaces spending limit set to **$0**, so it stops rather than bills | That the limit is $0 on your account |

@@ -135,3 +135,4 @@ Only by your decision, recorded here with the date and reason.
 | 29 Oct 2026 | Image building moved into the hackathon scope: M4 now builds and boots a real image in the emulator, and M5 produces real-phone build plans | ChatGPT review: the draft postponed image building, against the agreed priority order (checks → choices → built images) |
 | 29 Oct 2026 | VPN module removed from M6 and made optional and last | You already have working VPN in a separate project, so there's no need to rebuild it here |
 | 29 Oct 2026 | Clean slate and cloud first: the old Muse folders go to the Trash, development moves to Codespaces, and Mac installs need explicit approval | Your direction, recorded by ChatGPT on PR #18 |
+| 30 Oct 2026 | M0 Part A done: the old folders are in the Trash and nothing was installed. Part B now starts the codespace from the product repo (README + devcontainer) | Codespaces secrets only reach codespaces linked to a repo |
