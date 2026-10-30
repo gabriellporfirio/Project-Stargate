@@ -1,6 +1,6 @@
 # M1: Device profiles and checks (spec)
 
-Status: v2.1, which folds in [the follow-up review](../../reviews/2026-10-30-chatgpt-m1-device-profiles-v2.md) and [ChatGPT's review](../../reviews/2026-10-30-chatgpt-m1-device-profiles.md) (all six points). Planned for Fri 30 Oct, after M0. Builds on the M0 product repo at the accepted checkpoint: fixup commit `1673b97` on top of `b214429`. The M1 prompt carries its **full** SHA, and Muse stops if HEAD doesn't match it.
+Status: v2.1, which folds in [the follow-up review](../../reviews/2026-10-30-chatgpt-m1-device-profiles-v2.md) and [ChatGPT's review](../../reviews/2026-10-30-chatgpt-m1-device-profiles.md) (all six points). Planned for Fri 30 Oct, after M0. Builds on the M0 product repo at the accepted checkpoint: fixup commit `1673b97fb97d2612f42fa28c6fe07caa2a937bb3` on top of `b214429`. The M1 prompt carries this full SHA, and Muse stops if HEAD doesn't match it.
 
 ## Goal
 StarGate can describe a phone honestly. It has a **device profile** format in which every fact says where it came from and how sure we are. It has a **read-only probe** that would collect those facts from a real phone over USB, and four **simulated phones** to test against. M2 (research) and M3 (strategy and fit) take their input from this profile, so the format has to be exact enough that they can't read it two ways.
