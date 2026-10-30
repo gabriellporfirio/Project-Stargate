@@ -60,8 +60,8 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | Q9 | How Muse CLI signs in on a headless Linux cloud workspace | Muse docs + M0 | M0 |
 | Q10 | Is `Project-StarGate-Meta-Hackathon` private, and when do we first push to it? | You | M0 |
 | Q11 | Where the emulator runs for M4: one approved Mac install, or a paid cloud VM with virtualization | You (decision card in the project thread) | Before M4 |
-| Q12 | The hackathon theme and its problem statements: which one StarGate answers | You (from the rules) | Now |
-| Q13 | Submission requirements: video length and format, what must be public, write-up | You (from the rules) | Now |
+| Q12 | The hackathon theme and its problem statements: which one StarGate answers | You (from the rules) | Before the video script |
+| Q13 | The official rules URL, plus the submission requirements: video length and access, deliverables, repo visibility, attribution and licensing, deadline timezone | You (from the rules) | Before the video script |
 
 ## 5. The path: milestones
 
@@ -118,7 +118,7 @@ M7 (real phone) comes after the hackathon. The VPN module is optional and last, 
 If time is short, M5 shrinks to a plan for one simulated phone, but **M4 stays**: a real, selection-driven image booting in the emulator is the core of the demo. Together with M1–M3 and the M6 app, that shows the full chain: phone checks → supported choices → Meta-powered research and planning → a dynamically built image.
 
 ### Scoring
-How every milestone and the demo video map to the judging rubric: [scoring-plan.md](scoring-plan.md). Goal: top 5 in the Indie Developer track at minimum.
+How every milestone and the demo video map to the judging rubric (owner-supplied excerpt, [docs/hackathon-rules-excerpt.md](../docs/hackathon-rules-excerpt.md)): [scoring-plan.md](scoring-plan.md). Goal: top 5 in the Indie Developer track at minimum. The demo stays on simulated phones and the emulator. Voice and photo extras are cut until the core demo is recorded.
 
 ## 6. Review workflow
 
