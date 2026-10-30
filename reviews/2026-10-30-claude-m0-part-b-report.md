@@ -2,7 +2,7 @@
 
 30 Oct 2026 · Reviewer: Claude · v2, which folds in [ChatGPT's review](2026-10-30-chatgpt-m0-part-b-results.md).
 Plan commit used by Muse: `b498e7037e1e064fd6db8ff73687ecc5a81e449b`.
-Product checkpoint: `b214429…` plus fixup `1673b97…`. **Full final SHA: pending from the owner** (`git rev-parse HEAD`). Both commits are in the codespace only and not pushed, so neither Claude nor ChatGPT can inspect the code. The product repo's `main` still holds only the two seed files (`59176961…`).
+Product checkpoint: `b214429…` plus fixup `1673b97…`. Full final SHA (from the owner): `1673b97fb97d2612f42fa28c6fe07caa2a937bb3`. Both commits are in the codespace only and not pushed, so neither Claude nor ChatGPT can inspect the code. The product repo's `main` still holds only the two seed files (`59176961…`).
 
 ## Evidence labels
 - **Muse-reported:** Muse ran it and printed the result. Nobody else has seen the output directly.
@@ -18,7 +18,7 @@ Product checkpoint: `b214429…` plus fixup `1673b97…`. **Full final SHA: pend
 | `stargate doctor` exits 0 with `Meta inference: ok`, the endpoint and the model | Muse-reported, at the fixup commit | At 256 tokens a later rerun failed with `bad-response` (cut off by the cap, no answer). At 1024 tokens there were 3 consecutive `ok` runs: `POST https://api.meta.ai/v1/chat/completions`, `muse-spark-1.3` requested and returned, 1 attempt each, 20 s timeout, 1 retry, reasoning 161–233 tokens. This supports **this check**, not reliability for every Meta call |
 | Exits non-zero with `missing-credential` when the variable is unset | Muse-reported | Exit 2, 0 attempts, no request sent |
 | `python -m unittest -v` passes with a count above zero | Muse-reported, at the fixup commit | 39 offline tests pass. The earlier 36 was before the fixup |
-| Checkpoint commit in the codespace, nothing pushed | Muse-reported | `b214429` plus fixup `1673b97`, clean tree. Full SHA pending |
+| Checkpoint commit in the codespace, nothing pushed | Muse-reported | `b214429` plus fixup `1673b97fb97d2612f42fa28c6fe07caa2a937bb3`, clean tree. |
 
 **Verdict:** M0 Part B is **Muse-reported complete**. It moves to "owner-observed" once the owner runs the check below, and to "independently checked" if the code is pushed for review (Q10).
 
