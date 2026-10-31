@@ -41,7 +41,10 @@ ChatGPT's answers: fix all nine before M2, since they're all within the M1 spec;
 
 I ran the three scripts in a throwaway Git repo with stub commands and dummy keys. The normal path passed. Running B twice failed, a code change after B made C fail, a planted dummy key made C fail, Baseten unset was recorded as not applicable, and the committed diff's hash matched the tested hash.
 
-## Fixup prompt v3 (for the builder Muse)
+## Changes in v4 (from ChatGPT's third review)
+1. **Interrupted doctor run.** Script B now creates a persistent `doctor.started` marker with `mkdir` (which is atomic) immediately before calling the doctor, and refuses to start if the marker or a result already exists. An interrupted run therefore can't be retried. Muse must stop and report, and is told never to delete anything in `.git/m1-fixup/`.
+
+## Fixup prompt v4 (for the builder Muse)
 
 You are finishing M1 in this product repo. The reviewer checked commit `6baa6bcc639c9b9c781549a9692c8fef355665fb` and reported nine gaps. Until they're fixed and proven, M1 done-when items 1, 2, 3, 5, 6 and 7, and the "no process started" half of item 4, count as **not yet proven**. Fix the gaps in **one fixup commit** on top of that commit. Keep changes to what each fix needs: no unrelated cleanup, and skip the optional `doctor.py` refactor.
 
@@ -77,7 +80,7 @@ Run `git rev-parse HEAD && git status --short`. HEAD must be `6baa6bcc639c9b9c78
 ## Gates (all must pass before committing)
 Save each block below as a file outside the repo, exactly as written, and run it with `bash <file>`. Each script stops at the first failure and prints `GATE FAILED: <reason>`. **If any gate fails, do not commit.** Fix the cause if it's within these fixes, otherwise stop and report. Evidence is kept in `.git/m1-fixup/`, which survives a codespace restart and is never committed.
 
-**Order:** finish fixes 1–9 and 11, run script A until it passes, run script B **once**, then run script C. If you change any code after script B has run, script C will fail. Don't rerun the doctor: stop and report, because the one allowed live call has been used.
+**Order:** finish fixes 1–9 and 11, run script A until it passes, run script B **once**, then run script C. If you change any code after script B has run, script C will fail. Don't rerun the doctor: stop and report, because the one allowed live call has been used. The same applies if script B was interrupted: its started marker stays, and a second run of B refuses. Never delete anything in `.git/m1-fixup/`.
 
 **Script A: offline checks** (`/tmp/m1-gate-a.sh`; run as often as needed, it makes no network calls)
 ```
@@ -97,6 +100,7 @@ fail() { echo "GATE FAILED: $1"; exit 1; }
 BASE=6baa6bcc639c9b9c781549a9692c8fef355665fb
 E=.git/m1-fixup; mkdir -p "$E"
 [ -e "$E/doctor.rc" ] && fail "the one allowed doctor run has already been used; stop and report"
+[ -e "$E/doctor.started" ] && fail "a doctor attempt already started (it may have been interrupted); stop and report"
 [ -n "${MODEL_API_KEY:-}" ] || fail "MODEL_API_KEY unset; the doctor can't run"
 [ "$(git rev-parse HEAD)" = "$BASE" ] || fail "HEAD is not the M1 commit"
 git add -A
@@ -104,6 +108,7 @@ git diff --quiet || fail "working tree differs from staged code"
 [ -z "$(git ls-files --others --exclude-standard)" ] || fail "untracked files present"
 git diff --cached "$BASE" -- . ':(exclude)docs/m1-live-check.md' | sha256sum | cut -d' ' -f1 > "$E/tested.sha"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$E/doctor.time"
+mkdir "$E/doctor.started" || fail "could not create the started marker; stop and report"
 .venv/bin/stargate doctor > "$E/doctor.out" 2> "$E/doctor.err"; echo $? > "$E/doctor.rc"
 echo "doctor exit $(cat "$E/doctor.rc"); tested code hash $(cat "$E/tested.sha")"
 ```
