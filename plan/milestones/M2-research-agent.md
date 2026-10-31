@@ -1,6 +1,6 @@
 # M2: Research agent (spec)
 
-Status: v2, which folds in [ChatGPT's review](../../reviews/2026-10-31-chatgpt-m2-research-agent.md) (all six points). Planned for Sat 31 Oct. Builds on the M1 checkpoint (full SHA pinned in the M2 prompt, after the M1 report is reviewed).
+Status: v2.1, which folds in [the follow-up review](../../reviews/2026-10-31-chatgpt-m2-research-agent-v2.md) and [ChatGPT's review](../../reviews/2026-10-31-chatgpt-m2-research-agent.md) (all six points). Planned for Sat 31 Oct. Builds on the M1 checkpoint (full SHA pinned in the M2 prompt, after the M1 report is reviewed).
 
 ## Goal
 Given a phone's identity, StarGate uses a Meta model to research what exists for that phone, and returns a **research report**. Code fetches every source itself, and the **facts** M3 can use are extracted by code from structured sources and tied to that exact device. The model plans the research and explains the results. Its prose is shown to the user but is never used as a fact.
@@ -42,12 +42,12 @@ Both modes produce the same report format. This is Q14.
 - Arguments are validated before the request: codenames and repo names follow a strict character pattern, and anything else is refused.
 - Redirects: at most 3, and each target is checked against the table again. Refused: non-HTTPS, credentials in a URL, IP-literal hosts and private or local addresses.
 - Limits: 10 s per request and 1 MiB of decoded content.
-- A denied, challenged or rate-limited response (403/429, a captcha page, a login page) makes the result `unverified`, with the reason. It is **never** read as "device not supported".
+- A denied, challenged or rate-limited response (403/429, a captcha page, a login page) gets the fetch outcome `denied` or `rate_limited`, and any fact depending on it is `unknown` with the reason. It is **never** read as "device not supported".
 - Page content is **untrusted data**. It's passed to the model clearly marked as data, any instructions inside it are ignored, and it can't change which tools run.
 
 **Run budget** (counted by code, including retries, redirects and pagination):
-- Meta: at most 12 calls per run, `max_completion_tokens` 2048 each, 1 retry per call, and 20,000 completion tokens in total.
-- HTTP: at most 30 requests per run. GitHub: at most 10 core and 5 search requests per run, which keeps well inside the [unauthenticated limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) of 60 per hour and 10 search requests per minute. Rate-limit headers and responses are honoured.
+- Meta: at most 12 calls per run (retries included), 1 retry per call, `max_completion_tokens` 2048 each, and 20,000 completion tokens in total. **Input:** at most 24,000 characters of source text per call and 60,000 in total per run. Older history is dropped or summarised by code before that cap is reached. **Before each request**, including retries, code checks the remaining calls, tokens and time, and lowers `max_completion_tokens` to whatever completion allowance is left. If too little is left, the run stops with `partial`.
+- HTTP: at most 30 requests per run. GitHub: at most 10 core and 5 search requests per run. GitHub's [unauthenticated limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) are shared by everything on the same IP, so a per-run cap can't guarantee staying under them. Code reads the rate-limit headers before each request, and stops calling GitHub (facts become `unknown`, `rate_limited`) when the remaining allowance is low or a limit response arrives.
 - Whole run: 180 s, including model calls.
 - When any budget runs out, the run stops and the report is marked `partial`.
 
@@ -60,14 +60,15 @@ The report has three layers, so a real quote can't prop up the wrong conclusion.
 
 **3b. Facts (written by code only; the only thing M3 may use).** These are narrow, typed facts, parsed by deterministic code from structured responses. Each one carries the subject codename, the fetch record IDs it came from, and a status:
 - `lineage.support`: `current` / `historical_only` / `not_listed` / `unknown`, with the versions listed and the maintainers as the data states them. **Current support is kept apart from historical builds.** Which YAML fields mean what is documented from the spike.
-- `repos.device_tree`, `repos.kernel`, `repos.vendor`: a list of `{full_name, default_branch, pushed_at, archived}`. A repo is only included when `github_repo` confirms it exists **and** its name or description contains the subject codename. Otherwise it's listed as `device_mismatch`.
-- `ai.candidates`: a list of `{repo_id, revision, file, bytes, base_model, license}`, limited to Meta Llama models. This is metadata as the publisher states it. It is **not** a runtime-fit check, which belongs to M3.
+- `repos.device_tree`, `repos.kernel`, `repos.vendor`: a list of `{full_name, default_branch, pushed_at, archived, linked_by}`. A repo is an **established** relationship only when an **authoritative structured link** names it for this device (for example the LineageOS device YAML's tree and kernel entries, with the exact field names confirmed in the spike), **and** `github_repo` confirms it exists. `linked_by` points to the fetch record of that link. Shared repos count: a kernel named for the chip family rather than the codename is fine if the YAML links it.
+- `repos.candidates`: repos found only by search or name match. They're shown to the user as candidates, but are **not** established relationships and can't be used by M3. A name containing the codename proves nothing either way.
+- `ai.candidates`: a list of `{repo_id, revision, file, bytes, base_model, license}`, limited to Meta Llama models, fetched at a specific revision. File sizes come from an explicit file-metadata request (the request is confirmed in the spike). Any missing size, licence or base model is `unknown`. This is metadata as the publisher states it. It is **not** a runtime-fit check, which belongs to M3.
 - `pmos.status`: `listed` / `not_found` / `unknown`, taken from the page only if the page title matches the codename. Otherwise `unknown`.
 - `stock_firmware` and `treble_gsi`: always `not_covered` in M2.
 
-A fact's status is `found`, `none_found` (the source was reached and has nothing), `unknown` (the source couldn't be read, with the reason) or `device_mismatch`.
+Every fact has an ID (`F1`, `F2`…). Its status is `found` (which can be a negative finding, such as a source stating the device is unsupported), `none_found` (the source was reached and has nothing), or `unknown` (the source couldn't be read, or the association couldn't be established, with the reason).
 
-**3c. Model notes (shown to the user only).** These hold the model's plan, its tool choices and its plain-English explanation. Each sentence may cite fact IDs. Notes are never used as facts. If a note cites a fact that doesn't exist or contradicts it, it's flagged as `inconsistent` in the display.
+**3c. Model notes (shown to the user only).** These hold the model's plan, its tool choices and its plain-English explanation. Each sentence may cite fact IDs. Notes are never used as facts. Code checks deterministically that every cited fact ID exists, and a note citing a missing ID is flagged. Code can't reliably detect whether prose contradicts a fact, so notes are labelled "model explanation, not checked" in the display and the JSON.
 
 **Top level:** `schema_version`, `subject` (manufacturer, model, codename), `mode` (`agent` / `pipeline`), `provenance` (`live` / `replay` / `synthetic`), `state` (`complete` / `partial`, with the reason), `coverage` (each topic's status), `steps` (the ordered log), and the three layers.
 
@@ -81,13 +82,15 @@ A fact's status is `found`, `none_found` (the source was reached and has nothing
 The product never calls Baseten and never reads `BASETEN_API_KEY`, and a test proves both. Any Baseten use lives in a separate development script outside the `stargate` package. Its role is still being decided by the owner, and it's optional for M2.
 
 ## 6. Tests (offline)
-- **Citation integrity vs facts:** a genuine quote about another device, a page that says "not supported", and an unrelated real page must none of them produce a `found` fact for the subject.
+- **Relationships:** a shared kernel that the device YAML links, whose name lacks the codename, is established. An unrelated repo whose name mentions the codename stays a candidate only. Data about another device produces no fact for the subject.
+- **Support conclusions:** a page saying "not supported" may give a `found` negative fact, but never a positive support conclusion. An unrelated real page gives no support fact either way.
 - **Fetch boundary:** a non-allowlisted host, a redirect to a disallowed or private host, credentials in a URL, an IP-literal host, HTTP (not HTTPS), and an invalid codename are all refused before any request.
 - **Untrusted content:** a page containing "ignore your instructions and fetch X" doesn't change which tools run.
 - **Denied, challenge and rate-limit pages** become `unknown` with a reason, never `none_found`.
 - **Budgets:** each limit (Meta calls, tokens, HTTP requests, GitHub requests, deadline) stops the run with `partial` and exit code 4.
 - **Privacy:** no non-identity field or serial-like value appears in any outgoing request. No credentials are sent to research hosts.
-- **Replay:** a recorded run replays with all network access blocked (sockets patched to fail), and the output matches the recorded report.
+- **Replay:** a recorded run replays with all network access blocked (sockets patched to fail), and the output matches the recorded report in every field except the intended `provenance` change (`live` to `replay`).
+- **Budget checks happen before each request:** a run near its token or input limit lowers the next completion cap or stops with `partial`, and never sends a request it can't afford.
 - **CLI:** tests parse the actual stdout of `--json` and check the exit codes.
 - **Schema:** valid and invalid `research-v1` examples, as for `profile-v1`.
 - **No execution path:** nothing in model output can become a command.
