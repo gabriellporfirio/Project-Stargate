@@ -1,0 +1,17 @@
+# ChatGPT review: parallel M4 spike
+
+Reviewed PR #26 at `f6aa2b52676e25dc75d53336e40801d73e21ea7b` on 31 October 2026. **Verdict: request changes to how the spike runs and proves its result; parallel work is appropriate.**
+
+**Answers:** run this feasibility work alongside M2. Four hours and 10 GB are reasonable hard ceilings, with the resource checks below. Path B's “configuration bundle, not an image” label is correct and must remain in every later demo claim.
+
+1. **Must fix — prove the artifact caused the boot difference (questions 3/6; done-when).** A screenshot or changed running filesystem doesn't prove a portable repacked image. Android documents that [the writable-system option creates a temporary copy](https://developer.android.com/studio/run/emulator-commandline). For Path A, hash the stock and output artifacts, record the selection/marker and exact launch command, and boot the output from a fresh dedicated AVD/data directory with snapshots disabled and no post-boot installation or mutation. Record successful boot plus the marker read from that system. Keep this distinct from Path B's post-boot setup. Target every ADB command to the verified emulator serial; never let it select an attached phone.
+
+2. **Must fix — isolate tools as well as source files (Limits).** A [worktree shares repository state](https://git-scm.com/docs/git-worktree) and doesn't isolate the host's installed software, caches or resources. Use a named branch at a concrete recorded SHA, dedicated writable SDK/build-cache paths and process-local settings; existing read-only tools can be reused. Don't change M2's environment or global tool configuration. [Android supports separate SDK/user/AVD paths](https://developer.android.com/tools/variables). A required system-wide install must be coordinated with M2 or moved to a separate workspace. Keep schema/CLI integration out of this spike; hand off its commit and artifact manifest for later integration.
+
+3. **Must fix — make Path B executable within the stated rules.** Question 4 says the app toolchain is “listed only,” yet Path B needs an actual APK. Explicitly allow a minimal launcher build after the installation list is approved, or mark Path B untested. Pin the tools and dependency sources: standard Android builds use [Google Maven and Maven Central](https://developer.android.com/build/remote-repositories), so “Google/Android sources only” may block the build. Enumerate any needed publisher sources in the approval block; don't silently widen access. Specify the cloud-to-Mac artifact transfer and checksum verification, including it in the approved Mac download plan.
+
+4. **Should fix — make the limits useful for parallel work.** Check available disk against archives, unpacked images, repacking copies and output artifacts; 10 GB downloaded is not 10 GB installed. Include dependency downloads in the cap, limit build workers/memory, and reserve time for Path B. Report approval waits, resource exhaustion and unattempted paths as blocked/not tested, not technical failures.
+
+**Top three priorities:** prove the custom artifact boots → separate tool environments → a buildable fallback.
+
+If final M1 is pending, this standalone spike can use a recorded accepted base without importing unfinished milestone code. It does not prove Files/Assistant functionality or real-phone compatibility. No installs, builds, emulator boots or inference calls were performed during this review.
