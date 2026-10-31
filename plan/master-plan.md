@@ -84,6 +84,7 @@ Full spec: [milestones/M2-research-agent.md](milestones/M2-research-agent.md).
 **Demo:** `stargate research "<a real model name>"` shows live search steps and a cited report.
 
 ### M3: Strategy and fit engines
+Full spec: [milestones/M3-strategy-fit.md](milestones/M3-strategy-fit.md).
 It ranks how to build the OS for that phone: community tree build / generic system image / stock firmware rebuild / Linux / on-top-of-Android fallback, with reasons, risks and signing implications. The fit engine checks memory, storage, kernel features and AI model size. Over-budget selections are blocked.
 **Demo:** two simulated phones give different ranked plans, and an impossible selection is refused with a reason.
 
@@ -152,3 +153,4 @@ Only by your decision, recorded here with the date and reason.
 | 30 Oct 2026 | **Product principle:** StarGate is free to use, and the only key a user needs is their own **Meta API key**. Baseten (`muse-spark-open-1026`) is used only during development, never in the product people run | Your direction: it benefits both Meta and the user, with one key for an intelligent platform that builds their whole system |
 | 31 Oct 2026 | **M4 spike runs alongside M2**, in a separate worktree, to answer Q7, Q8 and the toolchain question by Sun 1 Nov | M4 is the core of the demo and the riskiest step. Finding a blocker on Monday would leave no time to change path |
 | 31 Oct 2026 | **Q11: the emulator runs on your Mac** (Apple M5, 16 GB), using arm64 images, after one approved install | Your answer. The codespace has no hardware virtualization |
+| 31 Oct 2026 | **M3 spec drafted while M1 and the M4 spike run.** Bootloader lock is inferred from the verified-boot state (rule R-LOCK-FROM-VBS), because M1 found no official source for the property it read | Keeps Muse busy without waiting on reviews. M3 needs the lock state for strategy decisions |
