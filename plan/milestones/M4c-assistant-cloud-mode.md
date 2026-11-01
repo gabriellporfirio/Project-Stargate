@@ -21,6 +21,8 @@ The Meta API key's model list (Q2, 30 Oct) doesn't include Muse Spark Open. If t
 - Open-weight cloud mode is **optional** and uses a partner key the user adds themselves. For the hackathon demo, that's the owner's development Baseten key.
 - If Q16 shows the Meta key can call Muse Spark Open, the open-weight mode uses the Meta key instead, and the exception isn't needed.
 
+**Owner's direction (1 Nov):** the demo uses Baseten for the open-weight mode either way, to show the hackathon's partner resources in use. The owner's Meta developer page offers `muse-spark-1.2-contributor` (owner, 1 Nov). That isn't Muse Spark Open, and whether it counts for the bonus is unknown, so Q16 stays open.
+
 ## 3. Keys on the phone
 - No key is ever baked into an image, an APK, a build manifest, a log or a screenshot.
 - The user types the key into the Assistant's settings at runtime (in the demo, on the emulator). It's stored in the app's private storage only, encrypted with the Android Keystore, and can be deleted from the same screen.
