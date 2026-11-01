@@ -1,21 +1,22 @@
-# ChatGPT review: M4 spike Route A decision
+# ChatGPT review: M4 Route A evidence and Part 2 prompt
 
-Reviewed PR #32 at `10771ad059c8f7ff96c348ce9d7a3604af3f085f` on 1 November 2026.
+Reviewed PR #32 at `87e9cff6b5e6eea85aa9a6369d118b8f44d738e7` on 1 November 2026. This updates the initial review after the spike commit and evidence copy were added.
 
-**Verdict: the Route A decision is consistent with the reported Mac result; one evidence/handoff gap must be closed before this PR unblocks Part 2.**
+**Verdict: the missing commit/report finding is resolved. Three corrections remain before accepting Path A as passed and sending the new Part 2 prompt.**
 
-The reported repacked-image boot and matching random marker support Route A under M4 §2. Keeping the separately tested Path B as a fallback is sensible. The marker test establishes the spike's image path; M4 still needs the real apps/model baked in and both final builds verified.
+The pinned spike SHA, full image/APK hashes, symlink layout and post-boot command list now provide a useful record. I also inspected the Path B screenshot, which shows the stated launcher. Missing archive/ancillary hashes are honestly labelled. The scoped `-sysdir` workaround is consistent with [Android's documented system-directory option](https://developer.android.com/studio/run/emulator-commandline).
 
-**Must fix — pin the spike commit and its evidence.** The new master-plan row still says the spike commit will be added later. M4 §11 requires M4a's first Part 2 commit to merge that exact recorded commit. The PR has only a narrative summary and abbreviated artifact hashes; the connected product repository still exposes only its seed, so I cannot inspect the underlying report.
+**Must fix 1 — complete the Path A boot evidence** (`plan/evidence/m4-spike-mac-results.md:61–75`). The successful marker run has no captured `sys.boot_completed=1`; the loop could also exit after ten minutes. The earlier value of 1 belongs to a different launch without the marker. The spike's proof rules require boot completion and marker read-back for the same repacked-image run. Recover that observation from existing records if available; otherwise perform a bounded owner-run confirmation of the same hashed image, recording both values and treating timeout as failure. Until then, label boot completion unverified rather than Path A fully passed.
 
-Add the final spike commit SHA and link an accessible, pinned `docs/m4-spike.md` record. An evidence-only copy in this planning repository is sufficient. It should contain the already-required records:
+**Must fix 2 — carry the partial-result branch through the prompt** (`plan/prompts/m4a-part2-route-a.md:41,50–67`). Step 3 allows an Assistant image failure and continuing with Files-only; Step 4 then unconditionally requires both builds to exit 0. Make the subsequent artifacts, Mac instructions and report conditional: if Assistant packaging fails, retain the Files-only output, report partial under M4 §10, and leave the reduced-demo decision with the owner. Do not invent a successful Assistant artifact or keep retrying merely to satisfy “both.”
 
-- Full artifact SHA-256 values and sizes, including the stock package/system image, repacked image and Path B APK.
-- The exact successful launch command and `-sysdir` directory layout/targets, showing which `system.img` was used, plus the fresh dedicated AVD, `-no-snapshot -wipe-data` and absence of `-writable-system`.
-- Captured boot-complete and marker read-back, the post-boot command list showing no Path A install/push or image mutation, and the Path B install/home-screen evidence.
+**Must fix 3 — preserve the device guard** (prompt line 60). “Before every group” weakens M4 §6's check before each device command. Require the emulator-only inventory check before each action, use the explicit serial, and verify the AVD name matches the intended dedicated build AVD. Stop for an unexpected device/AVD.
 
-Use the existing Mac outputs. If a required observation was not captured, mark it missing rather than infer it from “passed.” Until the commit/report is pinned, Part 1 can continue but Part 2's spike merge remains pending.
+**Should fix, non-blocking prompt clarifications:**
+- Line 35: only formatting differences may be explained away; M3's schema must remain semantically unchanged.
+- Line 40: package the entire approved manifest file set, rather than treating `.pte` and `tokenizer.model` as an independent payload definition.
+- Line 24: perform the shared disk/peak-space check before the first large unpack/repack, including any Step 3 validation, and carry forward the spec's Mac free-space check.
 
-**Launch change — accepted for this setup.** [Android's command-line documentation](https://developer.android.com/studio/run/emulator-commandline) supports `-sysdir` for selecting the system directory and also documents `-system`. Keeping the working `-sysdir` method is reasonable; treat the failed `-system` attempt as an observation on this Mac/emulator configuration, without claiming a universal emulator behavior.
+The shared lock, no-new-live-calls rule, manifest binding and final artifact/boot checks otherwise remain aligned. Part 1 remains approved.
 
-No other blockers found. This is a review of the decision and available records, not independent verification of the owner's Mac run. No installs, builds, emulator commands or live inference calls were performed.
+Evidence/specification/prompt review only. I did not inspect the unpushed product commits or run builds, emulator commands or live inference calls.
