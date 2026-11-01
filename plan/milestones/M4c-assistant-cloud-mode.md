@@ -87,7 +87,7 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 3. saves the reservation to the ledger, and only then sends.
 
 **How the largest possible cost is worked out.** Character counts don't tell you token counts: the same text can make different numbers of tokens on different models, and non-English text often makes more (Meta's [token counting](https://dev.meta.ai/docs/token-counting) page). So the reservation doesn't guess from characters. For each allowed model, the ledger holds a **pinned input-token ceiling** for the complete billable request (the question, the chat template and anything the provider adds), with its source:
-- by default, the ceiling is **16,384 input tokens**: two tokens for every byte of the 16 KB request-body cap. Every model's tokenizer turns a byte of text into at most one token, so this is twice what the body can hold and also covers the provider's own template;
+- by default, the ceiling is **16,384 input tokens**: two tokens for every byte of the 16 KB request-body cap. Byte-based tokenizers, like the Llama family's, never make more than one token per byte. For Muse models that's an assumption, because their tokenizers aren't published, so the ceiling doubles it to cover the provider's own template too, and the stop rule below catches it if it's still wrong;
 - the ceiling may be lowered only with a cited source for that model's tokenizer, recorded in the ledger;
 - the reserved cost is that ceiling × the pinned input price, plus 4,096 output tokens × the pinned output price.
 
