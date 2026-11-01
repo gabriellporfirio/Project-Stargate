@@ -1,22 +1,17 @@
-# ChatGPT review: M4 Route A evidence and Part 2 prompt
+# ChatGPT re-review: Route A confirmation and M4b fixup 3
 
-Reviewed PR #32 at `87e9cff6b5e6eea85aa9a6369d118b8f44d738e7` on 1 November 2026. This updates the initial review after the spike commit and evidence copy were added.
+Reviewed PR #32 at `245beee2c1ad01b1734c8163f3fee12f51f18a1e` on 1 November 2026, including commits `84683ef` and `6626453`.
 
-**Verdict: the missing commit/report finding is resolved. Three corrections remain before accepting Path A as passed and sending the new Part 2 prompt.**
+**Verdict: request changes for two prompt corrections. The Path A evidence is now accepted.**
 
-The pinned spike SHA, full image/APK hashes, symlink layout and post-boot command list now provide a useful record. I also inspected the Path B screenshot, which shows the stated launcher. Missing archive/ancillary hashes are honestly labelled. The scoped `-sysdir` workaround is consistent with [Android's documented system-directory option](https://developer.android.com/studio/run/emulator-commandline).
+The owner-run confirmation records the verified image hash, intended AVD, `boot_ok=1`, `sys.boot_completed=1` and the matching marker in one run. This closes the boot-evidence finding and supports Route A. The missing final empty device inventory is honestly labelled; it does not invalidate the boot/marker proof.
 
-**Must fix 1 — complete the Path A boot evidence** (`plan/evidence/m4-spike-mac-results.md:61–75`). The successful marker run has no captured `sys.boot_completed=1`; the loop could also exit after ten minutes. The earlier value of 1 belongs to a different launch without the marker. The spike's proof rules require boot completion and marker read-back for the same repacked-image run. Recover that observation from existing records if available; otherwise perform a bounded owner-run confirmation of the same hashed image, recording both values and treating timeout as failure. Until then, label boot completion unverified rather than Path A fully passed.
+The FULL/PARTIAL branch now carries through artifacts, Mac instructions and the report. The schema, manifest-defined payload and early disk-check clarifications are resolved. Part 1 remains route-independent and approved.
 
-**Must fix 2 — carry the partial-result branch through the prompt** (`plan/prompts/m4a-part2-route-a.md:41,50–67`). Step 3 allows an Assistant image failure and continuing with Files-only; Step 4 then unconditionally requires both builds to exit 0. Make the subsequent artifacts, Mac instructions and report conditional: if Assistant packaging fails, retain the Files-only output, report partial under M4 §10, and leave the reduced-demo decision with the owner. Do not invent a successful Assistant artifact or keep retrying merely to satisfy “both.”
+**Must fix 1 — reject every unexpected device** (`m4a-part2-route-a.md:63`; `m4b-fixup-3.md:21–26`). The proposed guard counts only rows containing the state `device`. I ran it in zsh against a fake adb: one expected emulator plus a physical device marked `unauthorized` or `offline` both incorrectly returned ALLOW. Parse all device rows from one successful inventory; require exactly one row, the exact expected emulator serial, state `device`, and the expected AVD name. Reject any extra row regardless of state. Apply that guard to M4b's commands too, including the root/push/chown fallback, and revalidate after adbd reconnects. Test those rejected inventories and the valid single-emulator case.
 
-**Must fix 3 — preserve the device guard** (prompt line 60). “Before every group” weakens M4 §6's check before each device command. Require the emulator-only inventory check before each action, use the explicit serial, and verify the AVD name matches the intended dedicated build AVD. Stop for an unexpected device/AVD.
+**Must fix 2 — separate stopping from token display** (`m4b-fixup-3.md:6,15,19,28`). The screenshot proves a visible control token, not failed EOS stopping or an absent length cap. In [ExecuTorch 1.5.1's generator](https://github.com/pytorch/executorch/blob/3b60683923245cf472b7323426920e15623ba361/extension/llm/runner/text_token_generator.h#L172), the text callback runs before the EOS check. Thus stopping can work while the UI still prints `<|eot_id|>`. Correct the diagnosis, inspect the installed runner/model's EOS handling, and explicitly require hiding control-token text from the answer as well as terminating generation. Test both independently, including a callback that delivers the terminating token. Keep the sourced chat format and 256-new-token requirement.
 
-**Should fix, non-blocking prompt clarifications:**
-- Line 35: only formatting differences may be explained away; M3's schema must remain semantically unchanged.
-- Line 40: package the entire approved manifest file set, rather than treating `.pte` and `tokenizer.model` as an independent payload definition.
-- Line 24: perform the shared disk/peak-space check before the first large unpack/repack, including any Step 3 validation, and carry forward the spec's Mac free-space check.
+**Should fix — preserve both model paths** (`m4b-fixup-3.md:18,22–25`). Scope folder creation and repair to Route B; retain Route A's manifest-defined read-only path, opened in place without copying. Also, `mkdirs` does not repair an existing shell-owned folder: check creation/readability failures rather than promising it is “always” app-owned.
 
-The shared lock, no-new-live-calls rule, manifest binding and final artifact/boot checks otherwise remain aligned. Part 1 remains approved.
-
-Evidence/specification/prompt review only. I did not inspect the unpushed product commits or run builds, emulator commands or live inference calls.
+I inspected the screenshot and primary runtime source, and tested only the guard with synthetic inventories. Product implementation, rebuilt APK, model hash matching and fresh Mac Assistant proof remain to be reviewed; no devices, builds or inference calls were run.
