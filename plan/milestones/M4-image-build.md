@@ -1,6 +1,6 @@
 # M4: Build StarGate OS for a selection and boot it in the emulator (spec)
 
-Status: v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). v2.1 fixes the one finding in the [re-review](../../reviews/2026-11-01-chatgpt-m4-image-build-v2.md): where the expected model hashes come from (section 5a). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
+Status: v2.2, 1 Nov 2026. v2.2 lets M4a start its route-independent Part 1 before the Mac result (section 11). v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). v2.1 fixes the one finding in the [re-review](../../reviews/2026-11-01-chatgpt-m4-image-build-v2.md): where the expected model hashes come from (section 5a). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
 
 ## Goal
 `stargate build` takes an accepted M3 plan and produces a StarGate build for **exactly** the selected services. Two selections give two different builds. Each one boots in the Android Emulator on the owner's Mac, shows a StarGate home screen listing only its services, and the services work:
@@ -155,12 +155,12 @@ If any line can't be ticked, M4 is reported as partial or blocked under section 
 | | M4a (builder Muse) | M4b (second Muse) |
 |---|---|---|
 | Worktree and branch | `/workspaces/m4a`, branch `m4a-build` | `/workspaces/m4b`, branch `m4b-assistant` |
-| Starts | when the route is known | now (step 0 doesn't depend on the route) |
+| Starts | **Part 1** now: the route-independent work (section 1 plan gate, section 5a binding, `build-v1`, the section 5 checks on APKs and model folders, section 7 items, the launcher and Files apps). **Part 2** when the route is known: route packaging (image or bundle), the spike merge, the Route A image checks, both demo builds and the Mac steps | now (step 0 doesn't depend on the route) |
 | Owns these files | `stargate/build/` and the `build` CLI command, the launcher and Files apps, `build-v1`, the section 5 checks, the section 7 items, `docs/m4-build.md` | the Assistant app, `docs/m4-assistant.md`, `docs/m4-sources.md`, the new catalog entries in `catalog/models.json` |
 | Doesn't touch | the Assistant app, the catalog | the build code, the launcher, Files, section 7 items |
 | Tool folders it may write | `/workspaces/m4a-tools/`, `/workspaces/m4a-downloads/` | `/workspaces/m4b-tools/`, `/workspaces/m4b-downloads/` |
 
-- **The spike:** M4a's first commit brings in the recorded spike commit on purpose (`git merge <spike commit>`, with the commit named in the message). The spike's tools in `/workspaces/m4-tools/` are **read-only** for both workers. If a worker needs more tools, they go in its own tool folder through its own approval.
+- **The spike:** M4a's first **Part 2** commit brings in the recorded spike commit on purpose (`git merge <spike commit>`, with the commit named in the message). The spike's tools in `/workspaces/m4-tools/` are **read-only** for both workers. If a worker needs more tools, they go in its own tool folder through its own approval.
 - **What M4b hands over:** `assistant-manifest.json`, with the model ID and source revision exactly as the new plan's handoff names them, the Assistant APK (path, package name, version, SHA-256), the runtime version, each model file (name, bytes, SHA-256), the minimum Android version, the RAM need, and the target path for each route (section 4b). M4b computes the hashes from the downloaded files, and the owner approves the completed manifest before any build uses it (section 5a). M4a only reads it (section 5a).
 - **Joining up:** M4a is the only integrator. It merges `m4b-assistant` into `m4a-build` with a merge commit, then runs the full test suite, the section 5 checks and both demo builds **on that combined commit**. The reviewer Muse checks the combined commit.
 - **Shared limits in the codespace:**
