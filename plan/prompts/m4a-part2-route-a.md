@@ -21,24 +21,24 @@ StarGate M4a, Part 2: Route A image builds. You are the BUILDER Muse in /workspa
 
 Rules: the same as Part 1. Work only in /workspaces/m4a. /workspaces/m4-tools stays READ-ONLY, and your tools and outputs go in /workspaces/m4a-tools and /workspaces/m4a-downloads. No downloads or installs without ONE "INSTALL APPROVAL REQUIRED" block and my OK. /usr/local/bin/python3 with PYTHONPATH=/workspaces/m4a. Never push, keys never printed, never --yolo, no sudo or apt. No live Meta or Baseten calls: Part 1 used M4a's allowance. Keep a list of commands run outside the sandbox.
 Build slot: before any Android build, image unpack or repack, take the shared lock with `flock /workspaces/.android-build.lock <command>`, or hold it with `exec 9>/workspaces/.android-build.lock; flock 9` for a sequence, and release it after. At most 2 workers and 2 GB heap. The second Muse uses the same lock.
-Disk: before step 4, record free space and estimate your peak (two unpacked plus two repacked images, the 1.1 GB model and any copies). Stop if free space is under that peak plus 5 GB.
+Disk: before the FIRST large unpack or repack (including any test or validation run in Step 3), record free space and estimate your peak (two unpacked plus two repacked images, the 1.1 GB model and any copies). Stop if free space is under that peak plus 5 GB. Carry the spec's Mac free-space check into the Step 5 Mac steps.
 
 Step 1: bring in the other branches (one commit each, merge commits, nothing rewritten).
 a. git merge c3c3739f017a0c24623b481e569193f3c3e28570, with "M4a: merge M4 spike c3c3739 (Route A proven on the Mac)" in the message.
-b. git merge m4b-assistant at 6bb6681 (check that the branch tip is 6bb6681; stop if it's different). Note in your report: this brings in the old demo/assistant.apk blob (about 24.7 MB) from commit 31512ba in history. Don't rewrite history, just report it, and the owner decides before any push.
+b. git merge m4b-assistant at 6bb6681, or at the M4b fixup commit if my paste note names one (check that the branch tip equals that SHA; stop if it's different). Note in your report: this brings in the old demo/assistant.apk blob (about 24.7 MB) from commit 31512ba in history. Don't rewrite history, just report it, and the owner decides before any push.
 After each merge, run the full suite. All tests must pass.
 
 Step 2: the Part 1 review items.
 - docs/m4-build.md: record the full `stargate plan ... --explain` command, including its output flag.
 - manifest.py: a guard that refuses a finished build manifest whose route is not_yet.
 - checks.py: read the Assistant package name from assistant-manifest.json, not a constant.
-- Optional: assert exit 8 through run_contents_checks for each contents case. Make plan-v1.json byte-identical to M3's again, or note why not.
+- Optional: assert exit 8 through run_contents_checks for each contents case. Make plan-v1.json byte-identical to M3's again, or note why not. Only formatting differences may be explained away: M3's schema must stay semantically unchanged.
 Commit: "M4a part 2A: merges and Part 1 review items".
 
 Step 3: Route A packaging.
 1. Read the spike's spike/m4/path_a_repack.py and docs/m4-spike.md, and reuse its proven repack method on the same stock image (system-images;android-34;default;arm64-v8a, system.img 250ee9bb4e87b7beb5755a3b6984822bcf4335cd2d80701ac2e5ce9fb9da105d, from /workspaces/m4-tools, read-only).
-2. `stargate build --plan P --out D` for an emulator_only plan now produces a repacked system image with: the launcher as a privileged/system app that is the home screen, with the build ID and the label from spec sections 1 and 2 in its config; the Files app when Files is selected; and, when the Assistant is selected, the Assistant APK plus the .pte and tokenizer.model in the read-only folder named in assistant-manifest.json (Route A path), opened in place, never copied out. Write the build ID into the image as a file the Mac steps can read back.
-3. Size: the model is about 1.1 GB, so the image will grow. Grow the filesystem the way the spike's method allows. Record the image size against the partition limit (spec section 5). If the model can't be placed in the image, that's a recorded Route A failure for the Assistant (spec 4b), never a push after boot. Report it and continue with the Files-only build.
+2. `stargate build --plan P --out D` for an emulator_only plan now produces a repacked system image with: the launcher as a privileged/system app that is the home screen, with the build ID and the label from spec sections 1 and 2 in its config; the Files app when Files is selected; and, when the Assistant is selected, the Assistant APK plus EVERY file listed in assistant-manifest.json (today the .pte and tokenizer.model; the manifest defines the set, not this prompt) in the read-only folder it names (Route A path), opened in place, never copied out. Write the build ID into the image as a file the Mac steps can read back.
+3. Size: the model is about 1.1 GB, so the image will grow. Grow the filesystem the way the spike's method allows. Record the image size against the partition limit (spec section 5). If the model can't be placed in the image, that's a recorded Route A failure for the Assistant (spec 4b), never a push after boot. Report it and continue with the Files-only build. From then on the result is PARTIAL (see Step 4).
 4. The section 5 checks read the REAL image: list the packages and the model folder inside the repacked image and compare them with the selection and assistant-manifest.json. Wrong content fails with 8.
 5. build-manifest.json (build-v1): route "A", every artifact with size and SHA-256, the assistant-manifest's own SHA-256, and the image size versus the partition limit.
 6. Tests for each of the above, with small synthetic images where real ones are too big.
@@ -47,7 +47,10 @@ Commit: "M4a part 2B: Route A image packaging and image contents checks".
 Step 4: the two demo builds.
 - Files-only: make a fresh accepted plan with M3's code for a demo profile whose result is emulator_only with only Files selected. Name the profile.
 - Files + Assistant: demo/plans/flagship-files-assistant.plan.json from M4b. Re-validate it first.
-Build both into /workspaces/m4a-tools/out/build-files and /workspaces/m4a-tools/out/build-files-assistant. Both must exit 0 with the section 5 checks passing, and have different manifests and launcher configs. Gzip each image for transfer and record both hashes (.img and .img.gz).
+Build both into /workspaces/m4a-tools/out/build-files and /workspaces/m4a-tools/out/build-files-assistant. Each build that is attempted must either exit 0 with the section 5 checks passing, or fail with its documented exit code; never fake or hand-assemble an artifact.
+- FULL result: both builds exit 0, with different manifests and launcher configs.
+- PARTIAL result (the Assistant can't be placed in the image, per Step 3 and spec 4b): keep the Files-only build, record the Assistant build's failure and exit code, create NO Assistant image, manifest or Mac steps, and don't retry just to get two builds. The reduced-demo decision is mine (spec section 10).
+Gzip each successful image for transfer and record both hashes (.img and .img.gz).
 Commit: "M4a part 2C: both demo builds" (manifests and docs only, no images in git).
 
 Step 5: the Mac steps (written, not run) in docs/m4-build.md, a section the owner can paste from. Use exactly the spike's working patterns:
@@ -57,13 +60,13 @@ Step 5: the Mac steps (written, not run) in docs/m4-build.md, a section the owne
 - Before creating anything: append the new AVDs (stargate-m4-files, stargate-m4-files-assistant) and ~/stargate-m4 to ~/stargate-cleanup-log.md with their undo commands.
 - Create each AVD with avdmanager (stock system-images;android-34;default;arm64-v8a, -d pixel_7). For the Assistant AVD, set hw.ramSize=6144 and a data partition big enough for the spec, editing config.ini with paste-clean lines.
 - Boot each with a sysdir of symlinks to the stock system-image files, with system.img pointing at that build's image, and `emulator -avd NAME -sysdir DIR -no-snapshot -wipe-data -no-metrics`. Never -system or -writable-system.
-- adb devices before every group; set SERIAL to the ONE emulator line; stop if anything else is listed; every adb command uses -s "$SERIAL".
+- Device guard before EVERY device command, not just each group (spec section 6). Put a one-line zsh function in the environment block, for example: sg_guard() { [ "$(adb devices | grep -cw device)" = "1" ] && adb devices | grep -q "^$SERIAL" && [ "$(adb -s "$SERIAL" emu avd name | head -1 | tr -d '\r')" = "$1" ] || { echo "STOP: unexpected device or AVD"; return 1; } } (check it parses in zsh). Then each adb line is written as: sg_guard stargate-m4-files && adb -s "$SERIAL" ... . It checks that exactly one device is attached, that it's the chosen emulator serial, and that its AVD name is the intended build AVD. On a mismatch, stop.
 - Boot record per spec section 6: sys.boot_completed, the build ID read back from the image, a home-screen screenshot, and every adb command run (with no install or push).
 - Files: adb forward, upload and download a test file with matching hashes, no code and wrong code refused, and loopback-only listeners shown inside the emulator and on the Mac.
-- Assistant: networking off, one question, and the model hashes the app shows.
+- Assistant (FULL result only): networking off, one question, and the model hashes the app shows. On a PARTIAL result, leave out the Assistant AVD and its steps.
 - Shut down and run adb devices after each boot.
 Commit: "M4a part 2D: Mac boot steps".
 
-Then STOP. Save /tmp/m4a-part2-report.md with: each merge commit, the Part 1 items fixed (file:line), the Route A method and image sizes versus the limit, both builds (exit code, manifest path, image and .gz hashes), whether the Assistant fit in the image, test count, scan results, the outside-sandbox command list, every commit SHA, and the history blob note.
+Then STOP. Save /tmp/m4a-part2-report.md with: FULL or PARTIAL at the top (if PARTIAL, why, and that the reduced-demo decision is waiting on me); each merge commit, the Part 1 items fixed (file:line), the Route A method and image sizes versus the limit, each build attempted (exit code, manifest path, image and .gz hashes for successful ones), whether the Assistant fit in the image, test count, scan results, the outside-sandbox command list, every commit SHA, and the history blob note.
 ```
 Paste Muse's report into the project thread. A reviewer check follows, then the Mac run.

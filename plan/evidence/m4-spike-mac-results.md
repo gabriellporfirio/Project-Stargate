@@ -40,7 +40,7 @@ adb root; id; ro.build.type      -> uid=0(root) ... context=u:r:su:s0 / userdebu
 emu kill; adb devices            -> empty
 ```
 
-## Path A (passed with -sysdir)
+## Path A (marker passed with -sysdir; boot completion for that run unverified)
 AVD `stargate-spike-a`. It was booted only with `-no-snapshot -wipe-data`, and never with `-writable-system`.
 
 1. **Attempt 1:** `emulator -avd stargate-spike-a -no-snapshot -wipe-data -system $SG/system-stargate-a.img`. The emulator exited at once: `ERROR | no init encryptionkey.img`, `FATAL | Encryption is requested but failed to create encrypt partition.`
@@ -71,8 +71,28 @@ AVD `stargate-spike-a`. It was booted only with `-no-snapshot -wipe-data`, and n
    adb devices                                   -> empty
    ```
    No `install`, `push`, `remount` or `root` was run in this boot.
-   - **Note:** in attempt 3 the separate `getprop sys.boot_completed` read-out was **not captured**. The wait loop exits either when it reads 1 or after 10 minutes. The marker read and the screenshot that follow depend on a running system.
+   - **Note:** in attempt 3 the separate `getprop sys.boot_completed` read-out was **not captured**. The wait loop exits either when it reads 1 or after 10 minutes, so its exit doesn't prove boot completion. The value of 1 in attempt 2 belongs to a different launch. **Boot completion for this run is unverified.** A bounded confirmation follows below.
    - `patha-screen.png` was **not shared**.
+
+## Path A boot confirmation (pending, owner-run)
+This uses the same image (`58961c20…`), the same AVD and the same sysdir. The loop is bounded, and a timeout counts as a failure. Path A counts as fully passed only if this prints `boot_ok=1`, a `sys.boot_completed` of 1, the avd name `stargate-spike-a` and the marker `selection=stargate-spike-a` with the same random value, all in this one run.
+```
+cd ~/stargate-spike
+shasum -a 256 system-stargate-a.img
+ls -l patha-sysdir/system.img
+adb devices
+emulator -avd stargate-spike-a -sysdir $SG/patha-sysdir -no-snapshot -wipe-data -no-metrics > patha-confirm.log 2>&1 &
+adb devices
+SERIAL=emulator-5554
+adb -s "$SERIAL" wait-for-device
+OK=0; for i in $(seq 1 120); do if [ "$(adb -s "$SERIAL" shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; then OK=1; break; fi; sleep 5; done; echo "boot_ok=$OK"
+adb -s "$SERIAL" shell getprop sys.boot_completed
+adb -s "$SERIAL" emu avd name
+adb -s "$SERIAL" shell cat /system/stargate-marker.txt
+adb -s "$SERIAL" emu kill
+adb devices
+```
+Result: **not yet run.**
 
 ## Path B (passed)
 ```
@@ -88,4 +108,4 @@ adb -s emulator-5554 emu kill; adb devices      -> empty
 The home screen shows "StarGate" and "Services: Files, Assistant": [m4-spike-path-b-home.png](m4-spike-path-b-home.png).
 
 ## Conclusion
-Path A booted the repacked image, and its unique marker read back from the running system, with no install or push. So, per M4 §2, M4 takes Route A. Path B also works and stays the fallback.
+Path A booted the repacked image, and its unique marker read back from the running system, with no install or push. Boot completion for that run is unverified until the bounded confirmation above passes. If it passes, M4 takes Route A per M4 §2. Path B also works and stays the fallback.
