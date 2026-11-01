@@ -1,6 +1,6 @@
 # M4: Build StarGate OS for a selection and boot it in the emulator (spec)
 
-Status: v2.2, 1 Nov 2026. v2.2 lets M4a start its route-independent Part 1 before the Mac result (section 11). v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). v2.1 fixes the one finding in the [re-review](../../reviews/2026-11-01-chatgpt-m4-image-build-v2.md): where the expected model hashes come from (section 5a). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
+Status: v2.3, 1 Nov 2026. v2.3 adds section 4d, after-boot model delivery for Route A (owner's decision, 1 Nov 22:57, master plan section 7), with matching edits to sections 3, 5, 6, 8, 9 and 10, following [GPT's review of the Part 3 handoff](../../reviews/2026-11-01-chatgpt-m4a-part2-and-part3.md). v2.2, 1 Nov 2026. v2.2 lets M4a start its route-independent Part 1 before the Mac result (section 11). v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). v2.1 fixes the one finding in the [re-review](../../reviews/2026-11-01-chatgpt-m4-image-build-v2.md): where the expected model hashes come from (section 5a). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
 
 ## Goal
 `stargate build` takes an accepted M3 plan and produces a StarGate build for **exactly** the selected services. Two selections give two different builds. Each one boots in the Android Emulator on the owner's Mac, shows a StarGate home screen listing only its services, and the services work:
@@ -34,7 +34,7 @@ Up to three small Android apps, built in the codespace with the spike's toolchai
 - **Files module:** a small file server inside the app's own storage (section 3a).
 - **Assistant module:** runs the chosen model on the device with no network permission (section 4).
 
-**Route A** places the apps and the model files in the system image **before boot**, repacks it with the spike's proven method, and records every hash. Nothing is installed or pushed after boot. **Route B** installs the same APKs after boot with `adb -s <serial> install`, pushes the model files (section 4b), sets the launcher as home, and records every command.
+**Route A** places the apps and the model files in the system image **before boot**, repacks it with the spike's proven method, and records every hash. Nothing is installed or pushed after boot, **with one recorded exception: the Assistant's model files when they don't fit the image (section 4d)**. No APK is ever installed after boot on Route A. **Route B** installs the same APKs after boot with `adb -s <serial> install`, pushes the model files (section 4b), sets the launcher as home, and records every command.
 
 Uploads to Files and caches the apps create while running are normal use, not installs, on both routes.
 
@@ -60,20 +60,30 @@ Values are sourced or `unknown`. If a needed value stays `unknown`, the pair isn
 
 ### 4b. Where the model lives, and how the app reads it
 The model is too large to ship inside the APK, so the files are delivered separately and the app opens them by path.
-- **Route A:** the files are placed in the system image before boot, in a read-only folder Muse names in the build (for example under `/product/`). The Assistant app opens them **from that folder directly**, with no extracted copy. If the app process can't read them (for example Android's file-access rules block it), that's a recorded Route A failure for the Assistant, not a reason to push files after boot.
+- **Route A:** the files are placed in the system image before boot, in a read-only folder Muse names in the build (for example under `/product/`). The Assistant app opens them **from that folder directly**, with no extracted copy. If the app process can't read them (for example Android's file-access rules block it), that's a recorded Route A failure for the Assistant, not a reason to push files after boot. The only exception is section 4d, which the owner chose because the model doesn't fit the product partition.
 - **Route B:** the files are pushed after boot into the app's own external files folder (`/sdcard/Android/data/<package>/files/model/`), which the app can read without extra permissions. Every push command and its target path are recorded.
 - **Hash chain:** each file's SHA-256 is recorded at four points: in the build manifest, after transfer to the Mac (`shasum -a 256`), inside the built artifact (image or pushed file), and **by the app itself** when it loads the file (shown on screen or written to its log). All four must match.
 - **AVD space:** each AVD's data and system sizes are set and recorded. The space needed is the model files plus any extracted copy plus **1 GB** headroom, and it's checked before boot.
+
+### 4d. Route A exception: apps in the image, model added after boot
+Part 2 measured the model (1,138,135,470 bytes) against the product partition's free space (305,967,104 bytes): it doesn't fit. The owner chose (1 Nov 22:57, master plan section 7) to keep the Assistant **app** in the image and to copy the **model files only** into the app's own folder after first boot, as in the Mac proofs.
+- **Label:** every output, the build manifest, the README and the video say "**apps in image; model added after boot**". It is never called a pure image build.
+- **What may be copied after boot:** only the model files listed in the approved Assistant manifest, into `/sdcard/Android/data/<package>/files/model/`. Nothing else. No APK is installed after boot.
+- **The payload is checked, not just the manifest.** The build reads the actual model files from an immutable snapshot (a folder the build copies them into under the build lock, then hashes) and compares them with `assistant-manifest.json` and with M3's handoff (section 5a). The snapshot's path, and each file's name, bytes and SHA-256, go in `build-manifest.json` under `model_delivery: "after_boot"`, and that snapshot is what the owner downloads.
+- **Exit codes:** a binding error (model ID, revision, file names or sizes differ from the handoff, or a hash is missing) stops with **9**. A missing payload file, or one with the right size but a different hash, fails with **8**.
+- **The image holds no model file.** The section 5 check reads the real image and fails with 8 if any model file is found in it.
+- **Mac steps:** the app is launched once and stopped so it creates its own folder (never `mkdir` from the shell); then each model file is copied with `adb -s <serial> push`, after checking it with `shasum` on the Mac, and hashed again on the device. The four-point hash chain in 4b still applies. Every push is listed in the boot record as the recorded exception.
+- **Result:** after the build passes, the result is "**build ready, Mac proof pending**". It becomes complete only after the section 6 boot record on the Mac (section 10).
 
 ### 4c. Limits
 Model download at most **2 GB**. The model must fit the AVD's memory with room for Android (the AVD gets 4 GB RAM unless the fit numbers say otherwise). No model, runtime or conversion tool is downloaded until the owner approves the INSTALL APPROVAL REQUIRED block for it.
 
 ## 5. Build manifest and checks
-Every build writes `build-manifest.json` (**`build-v1`**): the plan's SHA-256, the selection, the route, the build ID, each artifact (path, size, SHA-256), each app (package name, version, SHA-256), the model files (name, bytes, SHA-256, target path on the device) if any, the runtime version, and the unresolved checks from the handoff.
+Every build writes `build-manifest.json` (**`build-v1`**): the plan's SHA-256, the selection, the route, the build ID, each artifact (path, size, SHA-256), each app (package name, version, SHA-256), the model files (name, bytes, SHA-256, target path on the device) if any, `model_delivery` (`in_image`, `after_boot` under section 4d, or `none`) with the payload snapshot's path when it's `after_boot`, the runtime version, and the unresolved checks from the handoff.
 
 **Checks before a build is reported as done (all read the actual artifact, not just the manifest):**
 - **Apps match the selection exactly.** The check lists the real package names inside the image (Route A) or inside each APK to be installed (Route B, read from the APK itself), and compares them with the selection. An unselected app, or a selected one that's missing, fails.
-- **Model files match exactly.** The check lists every file in the model folder of the image (Route A) or of the Route B bundle, and the assets inside every APK. A model file in a build without the Assistant fails. In a build with the Assistant, the files must match the approved Assistant manifest as section 5a describes; wrong bytes fail.
+- **Model files match exactly.** The check lists every file in the model folder of the image (Route A) or of the Route B bundle, and the assets inside every APK. A model file in a build without the Assistant fails. In a build with the Assistant, the files must match the approved Assistant manifest as section 5a describes; wrong bytes fail. Under section 4d the image must hold **no** model file, and the after-boot payload snapshot is checked file by file instead (missing or wrong bytes fail with 8).
 - The two demo builds have different manifests and different home screens.
 - Route A: the image's size against its partition limit is checked and recorded. This resolves the "image size" check M3 left unresolved, for the emulator only.
 
@@ -97,7 +107,7 @@ Each boot record has:
 - `sys.boot_completed` = `1`;
 - the build ID read back from the running system, matching the manifest;
 - a screenshot of the home screen;
-- **every** `adb` command run after boot. For Route A this list has no `install` or `push`, which proves the apps and model came from the image;
+- **every** `adb` command run after boot. For Route A this list has no `install` or `push`, which proves the apps and model came from the image. Under section 4d the only allowed `push` lines are the model files, each with its on-device SHA-256, and they're marked as the recorded exception;
 - Files (when selected): upload a test file from the Mac and download it again, with matching SHA-256 on both sides. A request with no code and one with a wrong code are both refused. The listeners are shown to be loopback-only: inside the emulator with `adb -s <serial> shell ss -ltn` (or `netstat`), and on the Mac with `lsof -nP -iTCP:<port> -sTCP:LISTEN`, both showing `127.0.0.1`;
 - Assistant (when selected): the SHA-256 the app reports for the model files, matching the manifest, and one question answered with the emulator's networking turned off for the test, plus the answer's time and the model ID.
 
@@ -117,14 +127,15 @@ Everything stays in the user's home folder (tools under `~/stargate-spike/`, M4 
 - Record the AOSP page date with the quoted sentence in `docs/inference-rules.md`.
 
 ## 8. Exit codes for `stargate build`
-6: invalid or inconsistent plan. 7: the plan doesn't allow a build. 8: the build or a section 5 check failed. 9: the Assistant is selected but its model is unresolved, or the Assistant manifest doesn't match the plan (section 5a). 0: built, and the section 5 checks passed. **Exit 0 means only that the artifacts are right.** Whether M4 is complete is decided by section 10, after the boot proof on the Mac.
+6: invalid or inconsistent plan. 7: the plan doesn't allow a build. 8: the build or a section 5 check failed. 9: the Assistant is selected but its model is unresolved, or the Assistant manifest doesn't match the plan (section 5a), including a binding error in a section 4d payload. 8 also covers a missing or wrong-content model file in a section 4d payload. 0: built, and the section 5 checks passed. **Exit 0 means only that the artifacts are right.** Whether M4 is complete is decided by section 10, after the boot proof on the Mac.
 
 ## 9. Tests (offline, in the codespace)
 - Plan gate: invalid, inconsistent (including `handoff.reasons` different from `fit.reasons`) and refused plans stop with 6 or 7, and an unresolved Assistant model stops with 9, all before any build step (a stub build function is never called).
 - Selection: Files-only, Assistant-only and Files + Assistant plans each produce exactly their apps. An Assistant-only build has no Files app.
 - Contents check, each failing with 8: a Files-only build that contains the Assistant app; one with a model file hidden in an APK's assets or in the model folder; a Files + Assistant build missing either app; a build whose model file has the right name and size but different content.
 - Manifest binding (section 5a), using a **real plan generated by M3's code** with a small test model entry: the correct payload passes; a manifest with a different model ID, revision, file name or file size stops with 9; a manifest missing a file's hash stops with 9.
-- Manifest: valid and invalid `build-v1` examples. Hashes match the files.
+- Section 4d: a correct after-boot payload passes; a payload file with the same size but a different hash fails with 8; a missing payload file fails with 8; a payload whose names or sizes differ from the handoff stops with 9; an image that still contains a model file fails with 8; a Files-only build that carries a model payload fails with 8.
+- Manifest: valid and invalid `build-v1` examples, including `model_delivery`. Hashes match the files.
 - Launcher: the services list is generated from the handoff only.
 - Files handler tests (on the host, same code): no code and wrong code refused; `..`, absolute and encoded paths refused; an upload over 50 MB, and one that would pass 200 MB in total, refused with no partial file left; the server's listening socket is `127.0.0.1` (checked on the running test server, not only in the settings).
 - Section 7 items each have a test.
@@ -132,7 +143,8 @@ Everything stays in the user's home folder (tools under `~/stargate-spike/`, M4 
 
 ## 10. Results: complete, partial or blocked
 M4's result is one of:
-- **Complete:** both demo builds pass section 5, boot with the section 6 records, Files transfers with matching hashes, and the Assistant answers with networking off.
+- **Build ready, Mac proof pending:** a build passed section 5 in the codespace but has no Mac boot record yet. This is never reported as complete.
+- **Complete:** both demo builds pass section 5, boot with the section 6 records, Files transfers with matching hashes, and the Assistant answers with networking off. A section 4d build counts, labelled "apps in image; model added after boot".
 - **Partial:** everything works except the Assistant (it's missing, doesn't load, or doesn't answer), **or** only one of the two demo builds has a boot record. The record names what's missing. The owner then decides on the reduced demo (for example drop the Assistant from the video, or show it labelled "not ready"), and that decision is recorded in master plan section 7. A "not ready" Assistant never counts as complete.
 - **Blocked:** neither spike path passed, or a needed approval, disk space or time ran out. The record says which.
 
