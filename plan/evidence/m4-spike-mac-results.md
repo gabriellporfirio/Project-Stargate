@@ -40,7 +40,7 @@ adb root; id; ro.build.type      -> uid=0(root) ... context=u:r:su:s0 / userdebu
 emu kill; adb devices            -> empty
 ```
 
-## Path A (marker passed with -sysdir; boot completion for that run unverified)
+## Path A (passed with -sysdir; boot completion confirmed in a separate bounded run)
 AVD `stargate-spike-a`. It was booted only with `-no-snapshot -wipe-data`, and never with `-writable-system`.
 
 1. **Attempt 1:** `emulator -avd stargate-spike-a -no-snapshot -wipe-data -system $SG/system-stargate-a.img`. The emulator exited at once: `ERROR | no init encryptionkey.img`, `FATAL | Encryption is requested but failed to create encrypt partition.`
@@ -74,7 +74,7 @@ AVD `stargate-spike-a`. It was booted only with `-no-snapshot -wipe-data`, and n
    - **Note:** in attempt 3 the separate `getprop sys.boot_completed` read-out was **not captured**. The wait loop exits either when it reads 1 or after 10 minutes, so its exit doesn't prove boot completion. The value of 1 in attempt 2 belongs to a different launch. **Boot completion for this run is unverified.** A bounded confirmation follows below.
    - `patha-screen.png` was **not shared**.
 
-## Path A boot confirmation (pending, owner-run)
+## Path A boot confirmation (passed, owner-run 1 Nov 2026, about 18:08 GMT)
 This uses the same image (`58961c20…`), the same AVD and the same sysdir. The loop is bounded, and a timeout counts as a failure. Path A counts as fully passed only if this prints `boot_ok=1`, a `sys.boot_completed` of 1, the avd name `stargate-spike-a` and the marker `selection=stargate-spike-a` with the same random value, all in this one run.
 ```
 cd ~/stargate-spike
@@ -92,7 +92,21 @@ adb -s "$SERIAL" shell cat /system/stargate-marker.txt
 adb -s "$SERIAL" emu kill
 adb devices
 ```
-Result: **not yet run.**
+Result (pasted by the owner):
+```
+58961c2024ab3506ed790bf156690cf2d4542889eb05b4afa688133c27cd20e5  system-stargate-a.img
+patha-sysdir/system.img -> /Users/gabriellporfirio/stargate-spike/system-stargate-a.img
+adb devices (before launch)          -> empty
+adb devices (after launch)           -> empty at first, then emulator-5554 only
+boot_ok=1
+getprop sys.boot_completed           -> 1
+emu avd name                         -> stargate-spike-a
+cat /system/stargate-marker.txt      -> selection=stargate-spike-a
+                                        random=5c056da9fc167da1caf8d9c05d1040d1
+emu kill                             -> OK: killing emulator, bye bye
+adb devices (straight after kill)    -> emulator-5554 still listed while shutting down; the shell then reported the emulator job done
+```
+Boot completion and the marker were read in the same run of the same hashed image, so **Path A passes**. A clean `adb devices` after the job ended was **not captured** in this run.
 
 ## Path B (passed)
 ```
@@ -108,4 +122,4 @@ adb -s emulator-5554 emu kill; adb devices      -> empty
 The home screen shows "StarGate" and "Services: Files, Assistant": [m4-spike-path-b-home.png](m4-spike-path-b-home.png).
 
 ## Conclusion
-Path A booted the repacked image, and its unique marker read back from the running system, with no install or push. Boot completion for that run is unverified until the bounded confirmation above passes. If it passes, M4 takes Route A per M4 §2. Path B also works and stays the fallback.
+Path A booted the repacked image, and its unique marker read back from the running system, with no install or push. Boot completion for that run wasn't captured, but the bounded confirmation above, with the same image, AVD and sysdir, read `sys.boot_completed=1` and the same marker in one run. So, per M4 §2, M4 takes Route A. Path B also works and stays the fallback.
