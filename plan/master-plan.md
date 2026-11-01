@@ -105,6 +105,7 @@ For a real phone (from the M2 research and M3 ranking), the builder produces the
 Full spec: [milestones/M4c-assistant-cloud-mode.md](milestones/M4c-assistant-cloud-mode.md). After M4's local Assistant works, the Assistant also offers Meta cloud (`muse-spark-1.3`) and open-weight cloud (Muse Spark Open) modes. A local-only build keeps no network permission.
 
 ### M6: The StarGate app
+Full spec: [milestones/M6-app.md](milestones/M6-app.md). The platform runs in the codespace on loopback; the phone's page (Files and the Assistant chat) is served by the booted image over the cable; Wi-Fi is a stretch after the cable works.
 The full guided app from the mockup, wired to M1–M5. You can click through end to end on simulated phones, and Build produces the real emulator image from M4. Install shows exact steps but doesn't run them.
 **Demo:** a full click-through in the browser, ending with the image booting in the emulator.
 
