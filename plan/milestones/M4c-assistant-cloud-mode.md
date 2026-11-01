@@ -1,6 +1,6 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v2.3, 1 Nov 2026. v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+Status: v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and reserved costs) from what providers actually charge ([ChatGPT's re-review of v2.3](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.3.md)). v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
 
 **Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
@@ -74,7 +74,7 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 
 **Limits:**
 - **Attempts:** at most **5 per provider** for all of M4c, counting every compatibility probe, retry, emulator demo and rerun.
-- **Dollars:** at most **$5** of Baseten credit and **$2** of Meta credit, and never more than the remaining credit the owner recorded (the smaller of the two applies). Before the first call to a provider, the owner reads the remaining balance on its billing page and records it in the ledger.
+- **Dollars (ledger limit):** the ledger's recorded costs plus its estimated reservations may total at most **$5** for Baseten and **$2** for Meta, and never more than the remaining credit the owner recorded (the smaller of the two applies). This limits what the ledger knows about, not what the provider actually bills: see "This is a conservative estimate" below. Before the first call to a provider, the owner reads the remaining balance on its billing page and records it in the ledger.
 - **Input:** one question, at most 2,000 characters **and** at most 8,000 bytes once encoded as UTF-8, no history. The whole request body sent to the provider is capped at **16 KB**; a bigger body is refused before sending.
 - **Output:** `max_completion_tokens` (Meta) and `max_tokens` (Baseten) at most **4096**, and a reply body over 256 KB is cut off and labelled.
 - **Time:** 60 seconds per request, including the one retry.
@@ -92,10 +92,11 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 - the reserved cost is that ceiling × the pinned input price, plus 4,096 output tokens × the pinned output price.
 
 **This is a conservative estimate, not a guarantee.** No provider publishes a billable-input limit for these models that M4c can cite, so the reservation can't be proven to be the true maximum. The policy for M4c (a bounded demo) is:
-- the estimate above is reserved before every request, and nothing is sent unless it fits;
-- **one request may still cost more than its reservation** if the assumption is wrong. The gate can only find out from `usage` afterwards. So the dollar limits can be passed by at most that one request per provider;
-- when that happens, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner decides whether to change the ceiling through this plan;
-- the dollar limits ($5 and $2) stay far below the hackathon credit, so a single overshoot can't use up the account.
+- the estimate above is reserved before every request, and nothing is sent unless it fits the ledger limit;
+- **actual charges can be higher than the ledger shows.** A request may cost more than its estimate. A request that times out or comes back without `usage` may still be billed, and the ledger then holds only its estimate. So M4c doesn't promise any maximum on actual spend beyond what the attempt limit implies;
+- what is firm: at most **5 attempts per provider**, each with capped input (16 KB body) and capped output (4,096 tokens);
+- when a reply's `usage` is above its reservation, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner decides whether to change the ceiling through this plan;
+- after the last live call, the owner reads each provider's billing page again and records the actual spend next to the ledger total, so any gap is visible.
 
 If a provider later publishes an enforced input limit for a model, the ceiling for that model is set from it, with the source in the ledger.
 
@@ -106,7 +107,7 @@ A retry is a new attempt and goes through the same three steps. After the reply,
 - The build also writes into the APK the list of model IDs the phone may use: only the priced models in the ledger. In Meta mode the user may still type a model ID, but the app refuses any ID not on that list before sending, so changing the model can't cost more than was reserved. If the ledger can't cover it, the build stops with exit 6 before any build step.
 - The build writes that share into the APK, and the app refuses calls once it's used. The app's own counter only stops it going over that share; it's never the main record.
 - Each cloud build is used for **one** Mac proof run. A rerun needs a new build, which reserves a new share. The owner writes each phone call (time, provider, model, status) into the ledger after the run.
-- So the total can't pass the limits even if an AVD is wiped: the share was already spent in the ledger when the build was made.
+- So a wiped AVD can't add attempts or ledger allowance: the share was already reserved in the ledger when the build was made. (Actual charges can still differ from the ledger, as above.)
 
 The first Baseten attempt is the compatibility probe: it confirms the endpoint, the model ID and the response shape in one call.
 
@@ -153,7 +154,7 @@ Whatever the result, the core demo uses M4's build, and the video only shows mod
 - [ ] The owner approved the key wording in section 2 (by merging this PR).
 - [ ] Both APK variants build, and the cloud build passes M4's contents check with the variant recorded.
 - [ ] All section 7 tests pass offline, and the key scan is clean on every artifact.
-- [ ] The section 8 records exist, and every live call is in `docs/m4c-calls.md` within the limits.
+- [ ] The section 8 records exist; every live call is in `docs/m4c-calls.md` within the attempt limit and the ledger limit; and the owner's after-run billing readings are recorded beside the ledger total.
 - [ ] One checkpoint commit per part, reviewed by the reviewer Muse. Nothing pushed without the owner's OK.
 
 ## Out of scope
