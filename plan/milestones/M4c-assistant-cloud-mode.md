@@ -1,74 +1,109 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v1 draft, 1 Nov 2026, for review. It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers. It's built **only after M4's local Assistant answers in the emulator**, so it never delays M4.
+Status: v2, 1 Nov 2026. It folds in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+
+**Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
 ## Why
 - **For the user:** the phone runs a small model offline, and hands harder questions to a bigger Meta model in the cloud.
-- **For the hackathon:** the open-weight bonus counts only Muse Glimmer or Muse Spark Open, "served on participants' own hardware or through partner-provided inference" ([participant guide](../../docs/participant-guide-excerpt.md)). Muse Glimmer has 30B parameters (owner, from Meta's developer page, 1 Nov), far too big for the 4 GB emulator phone or a 16 GB Mac. Muse Spark Open through partner inference is the realistic route.
+- **For the hackathon:** the open-weight bonus counts only Muse Glimmer or Muse Spark Open, "served on participants' own hardware or through partner-provided inference" ([participant guide](../../docs/participant-guide-excerpt.md)). Muse Glimmer has 30B parameters, and its [model card](https://huggingface.co/meta-models/Muse-Glimmer-30B) lists 24–32 GB deployment targets, far outside the approved demo budget (a 6 GB emulator on a 16 GB Mac). Muse Spark Open through partner inference is the realistic route.
+- **The local model** is the one M4b chose: ExecuTorch 1.5.1 running Llama 3.2 1B on a 6 GB emulator (master plan section 7, 1 Nov; evidence in the product repo's `docs/m4-assistant.md` on branch `m4b-assistant`, commits e5ef6ce to 31512ba).
 
 ## 1. The three Assistant modes
-| Mode | Model | Where it runs | Key |
+| Mode | Model | Provider | Key |
 |---|---|---|---|
-| **Local** (default) | the small model M4 chose (from the plan's handoff) | on the phone, no network | none |
-| **Meta cloud** | `muse-spark-1.3` (the product's model, Q2) | Meta API, `api.meta.ai` | the user's own Meta API key |
-| **Open-weight cloud** | Muse Spark Open (`meta-models/muse-spark-open-1026`) | partner inference: Baseten for the hackathon (Q3) | see section 2 |
+| **Local** (default) | the model the plan's handoff names | on the phone, no network | none |
+| **Meta** | `muse-spark-1.3` by default; the user may type another Meta model ID | Meta Model API | the user's Meta key |
+| **Meta open-weight** | exactly `meta-models/muse-spark-open-1026`, fixed | Baseten (partner inference) | the user's Baseten key |
 
-The home screen and the Assistant always show which mode answered, and the model ID.
+The Assistant's settings have one **Model** drop-down with these three entries. The user picks a provider from the list and never types a web address. A custom provider is a later idea, out of scope here. The screen always shows which mode and model answered.
 
-### 1a. The model picker (owner's idea, 1 Nov)
-The Assistant's settings have one **Model** drop-down:
-- **Local:** the on-phone model. No key.
-- **Meta:** provider fixed to `api.meta.ai`. The user pastes their Meta key once and can type another Meta model ID (default `muse-spark-1.3`).
-- **Meta open-weight (Baseten):** provider fixed to Baseten. The user pastes a Baseten key, and the model ID is fixed to `meta-models/muse-spark-open-1026` (the only one the hackathon key works with).
+## 2. Keys (Q16 answered)
+[Meta's model catalog](https://dev.meta.ai/docs/models) says Muse Spark Open isn't served through the Meta Model API (cited in ChatGPT's review, 1 Nov). So:
+- StarGate **needs** only the user's Meta key. Local and Meta modes work with nothing else.
+- The **Meta open-weight** mode is **optional** and needs a Baseten key the user adds. For the demo, that's the owner's hackathon Baseten key. The hackathon email says: "Use exactly meta-models/muse-spark-open-1026. Your key only works with this hackathon model."
+- This replaces the earlier rule that Baseten is development-only (Q3): Baseten is now an optional, user-supplied partner provider inside the Assistant, and nowhere else.
 
-The user picks a provider from the list and doesn't type a web address. That keeps the host allow-list in section 3 and means a typo can't send a key to the wrong server. Whether Baseten takes the same request format as the Meta API (an OpenAI-style chat completions call) is **unknown** until M4c checks it with one call. A **custom provider** (any address and model) is out of scope for the hackathon and is listed as a later idea.
+## 3. Providers, pinned
+| | Meta | Baseten |
+|---|---|---|
+| Endpoint | `POST https://api.meta.ai/v1/chat/completions` (Q2, live in M0) | `POST https://inference.baseten.co/v1/chat/completions` ([Baseten docs](https://docs.baseten.co/reference/inference-api/chat-completions)) |
+| Authentication | `Authorization: Bearer <Meta key>` | `Authorization: Bearer <Baseten key>` |
+| Request | `model`, `messages` (one user message), `max_completion_tokens` | `model`, `messages` (one user message), `max_tokens` |
+| Response used | first choice's message text, `finish_reason`, `usage` | the same fields |
 
-## 2. The key question (Q16, unknown)
-The Meta API key's model list (Q2, 30 Oct) doesn't include Muse Spark Open. If the user's Meta key can't call it, the open-weight mode needs a partner key. That bends the product principle ("the only key a user needs is their Meta key"). Proposed wording, **for the owner to approve by merging this PR**:
-- StarGate still **needs** only the user's Meta key. Local and Meta cloud modes work with nothing else.
-- Open-weight cloud mode is **optional** and uses a partner key the user adds themselves. For the hackathon demo, that's the owner's development Baseten key.
-- If Q16 shows the Meta key can call Muse Spark Open, the open-weight mode uses the Meta key instead, and the exception isn't needed.
+- **Credential routing:** each key has its own slot and is only ever sent to its own provider's host. The request builder takes a provider, and the key comes from that provider's slot, never from a shared variable (tested with two dummy keys).
+- **Redirects are refused,** not followed. TLS certificate checks stay on, with no custom trust settings.
+- **Errors** show a short message, the provider and the HTTP status, never the response body or headers:
 
-**The Baseten key (hackathon email, quoted by the owner on 1 Nov):** "Use exactly meta-models/muse-spark-open-1026. Your key only works with this hackathon model." So the open-weight mode's model ID is exactly `meta-models/muse-spark-open-1026`.
+| Case | What the user sees | Retry? |
+|---|---|---|
+| 401 or 403 | "Key rejected by <provider>" | no |
+| 402 or a billing error | "<provider> account needs payment" | no |
+| 400 or 404 naming the model | "Model not available" | no |
+| 429 | "Too many requests, try later" | once, after the provider's wait time if given (at most 10 s) |
+| 5xx or timeout | "<provider> not reachable" | once |
+| Empty or malformed reply | "No usable answer" | no |
+| `finish_reason` other than `stop` | the text, labelled "incomplete" | no |
 
-**Owner's direction (1 Nov):** the demo uses Baseten for the open-weight mode either way, to show the hackathon's partner resources in use. The owner's Meta developer page offers `muse-spark-1.2-contributor` (owner, 1 Nov). That isn't Muse Spark Open, and whether it counts for the bonus is unknown, so Q16 stays open.
+No case ever switches to another model or provider by itself.
 
-## 3. Keys on the phone
-- No key is ever baked into an image, an APK, a build manifest, a log or a screenshot.
-- The user types the key into the Assistant's settings at runtime (in the demo, on the emulator). It's stored in the app's private storage only, encrypted with the Android Keystore, and can be deleted from the same screen.
-- Requests go only to two hosts, over HTTPS: `api.meta.ai` and Baseten's inference host. Baseten's exact host and request format are **unknown** here; M4c takes them from Baseten's official docs (or the M2 spike's Baseten notes, if it recorded them) and pins them before any call. No other host is allowed (tested).
-- The demo video never shows a key. The settings screen shows only the last four characters.
+## 4. The Assistant APK: two variants
+A library module can't hold a permission on its own, because Android merges library manifests into the app's manifest. So the Assistant is built as **two variants of the same package** `com.stargate.assistant`, and a build contains exactly one:
+- **Local variant** (M4b's APK): requests **no** permissions.
+- **Cloud variant:** requests exactly one permission, `android.permission.INTERNET`, and nothing else.
 
-## 4. Network
-This is the one change to M4's Assistant rule ("no network permission"):
-- The **local** mode is unchanged and still proven with networking off (M4 section 6).
-- Cloud modes need Android's network permission. That permission goes into a **separate cloud module**, added only by a new build option `stargate build --assistant-cloud`, allowed only when the plan selects the Assistant and recorded in `build-manifest.json`. A build without it has no network permission in any Assistant part (checked by M4's section 5 contents check).
-- A cloud mode with no network shows "cloud not reachable" and never falls back silently. A switch to local mode is offered, and shown as such.
+Build contract:
+- `stargate build --assistant-cloud` picks the cloud variant. Given without the Assistant selected, it stops with exit 6 **before any build step**.
+- `build-manifest.json` records `assistant_variant` (`local` or `cloud`) and the APK's package, version and SHA-256. M4's `build-v1` schema gains these two fields.
+- The section 5 contents check of M4 reads the **real** permissions from the APK inside the artifact and compares them with the variant: none for local, exactly INTERNET for cloud. Anything else fails with exit 8.
+- The cloud variant's local mode makes **zero** network requests even while networking is available (tested with a fake network layer that counts requests, and on the emulator).
 
-## 5. Limits
-- Live calls during M4c: at most **5** Meta cloud calls and **5** Muse Spark Open calls in total, each with `max_completion_tokens` at most 4096 and one retry, logged without prompts that contain personal data.
-- The Baseten spend for the demo stays within the hackathon's $100 key.
-- Any finish reason other than `stop` is shown as incomplete (M3 carry-over).
+## 5. Keys on the phone
+- No key is ever baked into an image, an APK, a build manifest, a log or a screenshot (M4's key scan covers APKs too).
+- The user pastes a key into settings at runtime. It's encrypted with an Android Keystore key (AES-GCM) and stored in the app's private storage. If the Keystore fails, the key is **not saved** and an error is shown. There's no plain-text fallback.
+- **No backups:** the app sets `android:allowBackup="false"` and a data-extraction rule that excludes everything from cloud backup and device transfer.
+- The settings screen shows only the last four characters, and a Delete button removes the key and its Keystore entry.
+- **Logs** hold metadata only: provider, model, HTTP status, time taken and token counts. Never the key, headers, the question or the answer.
+- **Local history stays local.** A cloud mode sends only the current question, never earlier local conversation. Switching modes doesn't upload anything.
 
-## 6. Tests (offline, in the codespace)
-- Local-only builds contain no cloud module and no network permission.
-- Key handling: no key in any artifact, manifest, log or test output (the key scan covers APKs and images too).
-- Host allow-list: requests to any other host are refused.
-- No network: a cloud mode reports "cloud not reachable", and nothing falls back silently.
-- The UI label always names the mode and model that answered.
+## 6. Limits (enforced in code, shared across everything)
+- **Attempts:** at most **5 per provider** for all of M4c, counting every compatibility probe, retry, emulator demo and rerun. Each attempt is recorded in `docs/m4c-calls.md` (time, provider, model, status, tokens, estimated cost) and in a local counter the code checks **before** sending. When the count is used up, the call is refused before it leaves the device or codespace.
+- **Input:** one question, at most 2,000 characters, no history.
+- **Output:** `max_completion_tokens` (Meta) and `max_tokens` (Baseten) at most **4096**, and a reply body over 256 KB is cut off and labelled.
+- **Time:** 60 seconds per request, including the one retry.
+- **Spend:** before the first Baseten call, the owner reads the remaining balance on Baseten's billing page and records it. M4c may use at most **$5** of Baseten credit and **$2** of Meta credit. The estimated cost of each call is recorded from its `usage`.
+- The first Baseten attempt is the compatibility probe: it confirms the endpoint, the model ID and the response shape in one call.
 
-## 7. Boot proof on the Mac (owner-run)
-For one Files + Assistant build with cloud mode included:
-- the local mode answers with networking off (as in M4);
-- the Meta cloud mode answers one question;
-- the open-weight cloud mode answers one question through Muse Spark Open, with the model ID shown;
-- a screenshot of each answer, with the key never visible.
+## 7. Tests (offline, in the codespace)
+- Variants: the local APK has no permissions; the cloud APK has exactly INTERNET; a wrong permission in either fails the contents check with 8; `--assistant-cloud` without the Assistant stops with 6 before building.
+- Local mode in the cloud variant makes zero requests (fake network layer).
+- Credential routing: with two dummy keys, each request carries only its own provider's key and goes only to its own host. Redirects are refused.
+- Errors: each row of the section 3 table with a fake server, including truncation, empty and malformed replies. No substitution, and no response body shown.
+- Limits: attempt counting includes retries; the sixth attempt is refused before dispatch; the input, output and time caps apply.
+- Privacy: switching to a cloud mode sends no earlier conversation.
+- Logs: a dummy key, a question and an answer never appear in logs.
 
-## Done when
-- [ ] Q16 is answered, and the owner has approved the key wording in section 2 (by merging this PR).
-- [ ] The three modes work in the emulator with the section 7 records.
-- [ ] All section 6 tests pass offline, and the key scan is clean on every artifact.
-- [ ] One checkpoint commit, reviewed by the reviewer Muse. Nothing pushed without the owner's OK.
+## 8. Proof on the Mac (owner-run, reusing M4 section 6)
+For one Files + Assistant build with `--assistant-cloud`, using M4's transfer hash checks, a **fresh dedicated 6 GB AVD**, `-no-snapshot -wipe-data`, the build-ID read-back and the ADB safety rules:
+- **Key handling with dummy keys:** save, restart the app (the key is still there, last four characters shown), delete (gone), and `adb -s <serial> shell bmgr` shows the app is excluded from backup.
+- **Local mode** answers with networking off.
+- **Meta mode** answers one question.
+- **Meta open-weight mode** answers one question through `meta-models/muse-spark-open-1026`, with the model ID shown.
+- A screenshot of each answer, with no key visible. Each live answer counts against section 6.
+
+## 9. Results
+- **Complete:** sections 7 and 8 all pass.
+- **Partial:** the local mode and at least one cloud mode pass, and the record names what didn't. For example, Baseten rejects the key or the time-box ran out.
+- **Blocked:** neither cloud mode works, or a needed approval or the time-box ran out first.
+Whatever the result, the core demo uses M4's build, and the video only shows modes that actually worked.
+
+## Done when (complete)
+- [ ] The owner approved the key wording in section 2 (by merging this PR).
+- [ ] Both APK variants build, and the cloud build passes M4's contents check with the variant recorded.
+- [ ] All section 7 tests pass offline, and the key scan is clean on every artifact.
+- [ ] The section 8 records exist, and every live call is in `docs/m4c-calls.md` within the limits.
+- [ ] One checkpoint commit per part, reviewed by the reviewer Muse. Nothing pushed without the owner's OK.
 
 ## Out of scope
-Muse Glimmer (too big for the phone), automatic switching between modes, a custom provider with a typed web address (later idea), and real phones.
+Muse Glimmer (outside the demo budget), automatic switching between modes, sending conversation history to the cloud, a custom provider with a typed web address, and real phones.
