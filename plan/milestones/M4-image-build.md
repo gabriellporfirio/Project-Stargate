@@ -91,7 +91,7 @@ Then the section 5 checks compare the hash of every model file in the artifact w
  (owner-run steps, written by Muse)
 Carried over from the spike:
 - **Transfer:** the owner downloads each artifact from the codespace through the browser and checks it with `shasum -a 256` against the manifest. A mismatch means stop.
-- **Launch:** each build gets a **fresh, dedicated AVD** (for example `stargate-m4-files` and `stargate-m4-files-assistant`), launched with `-no-snapshot -wipe-data` and without `-writable-system`. The **exact launch command**, including the image path, is recorded, so the record shows which image booted.
+- **Launch:** each build gets a **fresh, dedicated AVD** (for example `stargate-m4-files` and `stargate-m4-files-assistant`), launched with `-no-snapshot -wipe-data` and without `-writable-system`. The **exact launch command**, including the image path, is recorded, so the record shows which image booted. A repacked image is booted with `-sysdir` pointing at a folder that holds it alongside the stock image's other files, never with `-system`: on the owner's Mac (emulator 37.2.13.0), `-system` silently booted the stock image instead (spike, 1 Nov). The build ID read-back is what proves which image ran.
 
 Each boot record has:
 - `sys.boot_completed` = `1`;
