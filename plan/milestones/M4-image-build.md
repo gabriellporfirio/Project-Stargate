@@ -1,6 +1,6 @@
 # M4: Build StarGate OS for a selection and boot it in the emulator (spec)
 
-Status: v2, 1 Nov 2026. It folds in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
+Status: v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4-image-build.md) (five must-fix, one should-fix). v2.1 fixes the one finding in the [re-review](../../reviews/2026-11-01-chatgpt-m4-image-build-v2.md): where the expected model hashes come from (section 5a). It's written **before** the spike's Mac results, so it covers both routes. The Mac result picks one (section 2), and only that route's parts are built. Builds on M3 (final commit `e701acd82939a7cd9d8eef89813cd3427e4b5ef7`, reviewed) and the M4 spike (`m4-spike` branch, commit to be recorded after the Mac run).
 
 ## Goal
 `stargate build` takes an accepted M3 plan and produces a StarGate build for **exactly** the selected services. Two selections give two different builds. Each one boots in the Android Emulator on the owner's Mac, shows a StarGate home screen listing only its services, and the services work:
@@ -73,11 +73,21 @@ Every build writes `build-manifest.json` (**`build-v1`**): the plan's SHA-256, t
 
 **Checks before a build is reported as done (all read the actual artifact, not just the manifest):**
 - **Apps match the selection exactly.** The check lists the real package names inside the image (Route A) or inside each APK to be installed (Route B, read from the APK itself), and compares them with the selection. An unselected app, or a selected one that's missing, fails.
-- **Model files match exactly.** The check lists every file in the model folder of the image (Route A) or of the Route B bundle, and the assets inside every APK. A model file in a build without the Assistant fails. In a build with the Assistant, each file's name, bytes and SHA-256 must equal the handoff's model and the manifest; wrong bytes fail.
+- **Model files match exactly.** The check lists every file in the model folder of the image (Route A) or of the Route B bundle, and the assets inside every APK. A model file in a build without the Assistant fails. In a build with the Assistant, the files must match the approved Assistant manifest as section 5a describes; wrong bytes fail.
 - The two demo builds have different manifests and different home screens.
 - Route A: the image's size against its partition limit is checked and recorded. This resolves the "image size" check M3 left unresolved, for the emulator only.
 
-## 6. Boot proof on the Mac (owner-run steps, written by Muse)
+### 5a. Where the expected model hashes come from
+M3's plan and catalog name the model, its revision, and each file's name and size, but **not** per-file SHA-256 values. M3's schema stays as it is. The expected hashes come from the **approved Assistant manifest** (`assistant-manifest.json`, section 11), which M4b writes after downloading the files and the owner approves with its install list. It's committed, and its own SHA-256 is recorded in `build-manifest.json`.
+
+Before any build step, `stargate build` binds the manifest to the plan, and stops with exit 9 if any of these differ:
+1. The manifest's model ID and source revision equal the handoff's.
+2. The manifest's file set equals the handoff's: the same file names, and the same size for each file.
+3. Every file in the set has a SHA-256 in the manifest.
+
+Then the section 5 checks compare the hash of every model file in the artifact with the manifest. A file with the right name and size but different content fails with 8.
+
+ (owner-run steps, written by Muse)
 Carried over from the spike:
 - **Transfer:** the owner downloads each artifact from the codespace through the browser and checks it with `shasum -a 256` against the manifest. A mismatch means stop.
 - **Launch:** each build gets a **fresh, dedicated AVD** (for example `stargate-m4-files` and `stargate-m4-files-assistant`), launched with `-no-snapshot -wipe-data` and without `-writable-system`. The **exact launch command**, including the image path, is recorded, so the record shows which image booted.
@@ -106,12 +116,13 @@ Everything stays in the user's home folder (tools under `~/stargate-spike/`, M4 
 - Record the AOSP page date with the quoted sentence in `docs/inference-rules.md`.
 
 ## 8. Exit codes for `stargate build`
-6: invalid or inconsistent plan. 7: the plan doesn't allow a build. 8: the build or a section 5 check failed. 9: the Assistant is selected but its model is unresolved. 0: built, and the section 5 checks passed. **Exit 0 means only that the artifacts are right.** Whether M4 is complete is decided by section 10, after the boot proof on the Mac.
+6: invalid or inconsistent plan. 7: the plan doesn't allow a build. 8: the build or a section 5 check failed. 9: the Assistant is selected but its model is unresolved, or the Assistant manifest doesn't match the plan (section 5a). 0: built, and the section 5 checks passed. **Exit 0 means only that the artifacts are right.** Whether M4 is complete is decided by section 10, after the boot proof on the Mac.
 
 ## 9. Tests (offline, in the codespace)
 - Plan gate: invalid, inconsistent (including `handoff.reasons` different from `fit.reasons`) and refused plans stop with 6 or 7, and an unresolved Assistant model stops with 9, all before any build step (a stub build function is never called).
 - Selection: Files-only, Assistant-only and Files + Assistant plans each produce exactly their apps. An Assistant-only build has no Files app.
-- Contents check, each failing with 8: a Files-only build that contains the Assistant app; one with a model file hidden in an APK's assets or in the model folder; a Files + Assistant build missing either app; a build whose model file has the right name but wrong bytes.
+- Contents check, each failing with 8: a Files-only build that contains the Assistant app; one with a model file hidden in an APK's assets or in the model folder; a Files + Assistant build missing either app; a build whose model file has the right name and size but different content.
+- Manifest binding (section 5a), using a **real plan generated by M3's code** with a small test model entry: the correct payload passes; a manifest with a different model ID, revision, file name or file size stops with 9; a manifest missing a file's hash stops with 9.
 - Manifest: valid and invalid `build-v1` examples. Hashes match the files.
 - Launcher: the services list is generated from the handoff only.
 - Files handler tests (on the host, same code): no code and wrong code refused; `..`, absolute and encoded paths refused; an upload over 50 MB, and one that would pass 200 MB in total, refused with no partial file left; the server's listening socket is `127.0.0.1` (checked on the running test server, not only in the settings).
@@ -149,7 +160,7 @@ If any line can't be ticked, M4 is reported as partial or blocked under section 
 | Tool folders it may write | `/workspaces/m4a-tools/`, `/workspaces/m4a-downloads/` | `/workspaces/m4b-tools/`, `/workspaces/m4b-downloads/` |
 
 - **The spike:** M4a's first commit brings in the recorded spike commit on purpose (`git merge <spike commit>`, with the commit named in the message). The spike's tools in `/workspaces/m4-tools/` are **read-only** for both workers. If a worker needs more tools, they go in its own tool folder through its own approval.
-- **What M4b hands over:** `assistant-manifest.json`, with the Assistant APK (path, package name, version, SHA-256), the runtime version, each model file (name, bytes, SHA-256, source revision), the minimum Android version, the RAM need, and the target path for each route (section 4b).
+- **What M4b hands over:** `assistant-manifest.json`, with the model ID and source revision exactly as the new plan's handoff names them, the Assistant APK (path, package name, version, SHA-256), the runtime version, each model file (name, bytes, SHA-256), the minimum Android version, the RAM need, and the target path for each route (section 4b). M4b computes the hashes from the downloaded files, and the owner approves the manifest with the install list. M4a only reads it (section 5a).
 - **Joining up:** M4a is the only integrator. It merges `m4b-assistant` into `m4a-build` with a merge commit, then runs the full test suite, the section 5 checks and both demo builds **on that combined commit**. The reviewer Muse checks the combined commit.
 - **Shared limits in the codespace:**
   - At most **one** Android or Gradle build runs at a time across both workers, with at most 2 workers and 2 GB of heap.
