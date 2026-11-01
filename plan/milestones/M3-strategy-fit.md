@@ -1,6 +1,6 @@
 # M3: Strategy and fit engines (spec)
 
-Status: v2, 1 Nov 2026, for review. v1 was reviewed by ChatGPT (`reviews/2026-11-01-chatgpt-m3-strategy-fit.md`), and this version fixes all five findings. Builds on M1 (device profiles, final commit `1210cd92e12f64f1d64c399c003e287584ac78c1`) and M2 (research reports, commit `7c73173de9de36a1a88d15da338612c5a836aa08`, under review). The M3 prompt pins the reviewed M2 commit.
+Status: v2.1, 1 Nov 2026, for review. v1 was reviewed by ChatGPT (`reviews/2026-11-01-chatgpt-m3-strategy-fit.md`), and v2 fixed all five findings. v2.1 fixes the re-review (`reviews/2026-11-01-chatgpt-m3-strategy-fit-v2.md`): the handoff now carries the decision, and M4 must check the whole plan before building. Builds on M1 (device profiles, final commit `1210cd92e12f64f1d64c399c003e287584ac78c1`) and M2 (research reports, commit `7c73173de9de36a1a88d15da338612c5a836aa08`, under review). The M3 prompt pins the reviewed M2 commit.
 
 ## Goal
 For one phone and one selection of services, StarGate answers two questions with plain, predictable code:
@@ -65,7 +65,7 @@ Each strategy ends up as one of:
 | `generic_system_image` (GSI) | `boot.treble_enabled` is `true`; unlock OK; `resources.cpu_abis` names an ABI that a GSI is published for | `treble_enabled` is `false`; unlock blocked | ABI unknown | Launch and vendor version compatibility (Android's GSI rules also check these, and M3 has no fact for them) |
 | `linux` (postmarketOS-style) | `pmos.status` is `listed`; unlock OK | Unlock blocked | `pmos.status` is `not_found` (not being listed isn't proof a port can't exist) | A listed wiki page shows a page exists, not that the port works: which features work isn't checked |
 | `stock_rebuild` | Never in M3 | Never | Never | Always `not_covered` (M2 doesn't research stock firmware) |
-| `on_top_of_android` | `identity.sdk_level` is at least the app minimum; `resources.cpu_abis` includes an ABI the apps support | `identity.sdk_level` is below the app minimum | SDK or ABI unknown | The apps don't exist yet (M5). The minimum Android version and ABIs are **planning estimates** in `docs/strategy-rules.md`, labelled so, until M5 sets them |
+| `on_top_of_android` | `identity.sdk_level` is at least the app minimum; `resources.cpu_abis` includes an ABI the apps support | `identity.sdk_level` is below the app minimum | SDK or ABI unknown | The app modules don't exist yet (they're built in M4). The minimum Android version and ABIs are **planning estimates** in `docs/strategy-rules.md`, labelled so, until M4 sets them |
 
 **Ranking:** candidates come first, in a fixed, documented order: community build, then GSI, then Linux, then on top of Android. `unknown` ones come next, then `blocked` ones (`current` blockers before `no_official_path`), then `not_covered`. Every strategy carries fixed, code-owned text for its **risks** (for example "unlocking wipes the phone's data" or "some GSI hardware features may not work") and its **signing implication** (for example "verified boot shows orange after unlocking; relocking needs your own signing key, if the phone supports it"). Each piece of text cites its source in `docs/strategy-rules.md`, or is labelled "StarGate's own guidance".
 
@@ -75,7 +75,7 @@ The requirements live in `docs/fit-budgets.md`, one row each, with a source or t
 ### 4a. Resource budgets for the whole selection
 Memory and storage add up **every selected service**, not just one:
 - **Memory needed** = OS baseline + Files app overhead (if Files is selected) + Assistant app overhead (if selected) + the model's total file bytes × runtime factor (if the Assistant is selected).
-- **Storage needed** = Files budget (if selected) + the Assistant app size + the model's total file bytes (if the Assistant is selected).
+- **Storage needed** = Files budget (if Files is selected) + the Assistant app size and the model's total file bytes (both only if the Assistant is selected).
 
 The baseline, overheads, factor and budgets are planning estimates unless a source is found.
 
@@ -113,7 +113,12 @@ stargate plan --sim <fixture> --services files,assistant [--research <file>] [--
 ```
 - It prints a readable plan: the strategies in ranked order with status, reasons, open checks and risks; then the fit table; then the model choice; then the selection result; then the build checks for M4; then the labelled explanation.
 - `--json` / `--json-out` give a validated **`plan-v1`** report with: `schema_version`, `subject`, `inputs` (the profile, research and catalog, each with its SHA-256 and provenance), `rules` (the SHA-256 of `docs/strategy-rules.md`, `docs/fit-budgets.md` and `docs/inference-rules.md`), `unlock_state`, `strategies`, `fit`, `selection_result`, `explanation_status`, `notes`, and `provenance`.
-- **The handoff to M4**, a `handoff` block in `plan-v1`: the selected services; the chosen model (`id`, `source`, `revision`, each file's name and bytes, `format`, `runtime`, total bytes), or `null` with the reason; the candidate strategies in order; and every **unresolved check** (image size, the open checks from 3b, and any `unknown` fit check). M4 reads only this block.
+- **The handoff to M4**, a `handoff` block in `plan-v1`: the selected services; the chosen model (`id`, `source`, `revision`, each file's name and bytes, `format`, `runtime`, total bytes), or `null` with the reason; the candidate strategies in order; and every **unresolved check** (image size, the open checks from 3b, and any `unknown` fit check). The handoff also carries the **decision itself**, so it can never be read without it:
+  - `selection_result` (`fits`, `unconfirmed` or `refused`) and every refusal reason;
+  - `build_allowed`: `emulator_only` for `fits` and `unconfirmed`, and `none` for `refused`. In M3 nothing is ever allowed onto a real phone;
+  - the provenance of each input (live, replay or synthetic).
+
+**M4's rule for using a plan:** M4 first validates the **whole** `plan-v1` file against its schema, then checks that the handoff's `selection_result` and `build_allowed` match the top-level ones. It starts a build only if `build_allowed` is `emulator_only`. A refused plan, a plan that fails validation, or a handoff that disagrees with the rest of the plan stops M4 before any build step. M4's spec will repeat this rule and test it.
 
 **Exit codes, in priority order** (the first that applies wins):
 1. **6**: invalid input (schema, wrong phone, unknown service). Checked before any model call.
@@ -133,7 +138,7 @@ Whenever `--explain` fails, `explanation_status` records it (`failed` with the M
 - **Refusals:** `old32` with the Assistant is refused when every catalog model needs a 64-bit ABI. `budget` with the Assistant is refused when RAM is below every model's need. Each refusal names the fact and both numbers. Selecting Files and the Assistant together needs more memory and storage than the Assistant alone.
 - **Unknowns:** a missing fact gives `unconfirmed`, never `fits`. Image size is always listed as unresolved in the handoff.
 - **Exit precedence:** refused plus a failed `--explain` gives 7, with `explanation_status: failed`. Not refused plus a failed `--explain` gives 2 or 5.
-- **Handoff:** `fits` and `unconfirmed` plans have a complete `handoff` block, the chosen model's files and bytes match the catalog, and the rule-file hashes match the docs.
+- **Handoff:** `fits` and `unconfirmed` plans have a complete `handoff` block, the chosen model's files and bytes match the catalog, and the rule-file hashes match the docs. **A Files-only pair:** the same phone with enough storage and with too little storage gives one plan with `build_allowed: emulator_only` and one with `selection_result: refused`, `build_allowed: none` and the storage reason, both inside the handoff. The two handoffs are not equal. The schema rejects a plan whose handoff `selection_result` or `build_allowed` disagrees with the top level, or that pairs `refused` with `emulator_only`.
 - **The model can't change decisions:** a recorded model response claiming "this phone can run GSI" leaves the GSI status unchanged. A note citing a missing fact ID is flagged.
 - **Research layers:** repo candidates and model notes in the research file are ignored, and only typed facts are read.
 - **Bytes:** sizes are compared in whole bytes. A value like "2 GB" in a requirement file is rejected.
