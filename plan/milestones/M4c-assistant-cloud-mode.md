@@ -15,6 +15,14 @@ Status: v1 draft, 1 Nov 2026, for review. It follows the owner's direction on 1 
 
 The home screen and the Assistant always show which mode answered, and the model ID.
 
+### 1a. The model picker (owner's idea, 1 Nov)
+The Assistant's settings have one **Model** drop-down:
+- **Local:** the on-phone model. No key.
+- **Meta:** provider fixed to `api.meta.ai`. The user pastes their Meta key once and can type another Meta model ID (default `muse-spark-1.3`).
+- **Meta open-weight (Baseten):** provider fixed to Baseten. The user pastes a Baseten key, and the model ID is fixed to `meta-models/muse-spark-open-1026` (the only one the hackathon key works with).
+
+The user picks a provider from the list and doesn't type a web address. That keeps the host allow-list in section 3 and means a typo can't send a key to the wrong server. Whether Baseten takes the same request format as the Meta API (an OpenAI-style chat completions call) is **unknown** until M4c checks it with one call. A **custom provider** (any address and model) is out of scope for the hackathon and is listed as a later idea.
+
 ## 2. The key question (Q16, unknown)
 The Meta API key's model list (Q2, 30 Oct) doesn't include Muse Spark Open. If the user's Meta key can't call it, the open-weight mode needs a partner key. That bends the product principle ("the only key a user needs is their Meta key"). Proposed wording, **for the owner to approve by merging this PR**:
 - StarGate still **needs** only the user's Meta key. Local and Meta cloud modes work with nothing else.
@@ -63,4 +71,4 @@ For one Files + Assistant build with cloud mode included:
 - [ ] One checkpoint commit, reviewed by the reviewer Muse. Nothing pushed without the owner's OK.
 
 ## Out of scope
-Muse Glimmer (too big for the phone), automatic switching between modes, any other cloud provider, and real phones.
+Muse Glimmer (too big for the phone), automatic switching between modes, a custom provider with a typed web address (later idea), and real phones.
