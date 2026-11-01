@@ -22,7 +22,7 @@ So the video carries a lot of weight in the final round. But it's scored on the 
 ## Bonus prizes worth aiming at
 These come on top of the track ranking and use work we're already doing:
 - **Best Agentic Use-Case ($5K):** the M2 research agent, if agent mode works.
-- **Best Build on Meta Open Weight Models ($10K):** only if the phone's Assistant runs **Muse Glimmer** (or Muse Spark Open) on the device. Whether that's possible is Q15, checked before M4 picks the model.
+- **Best Build on Meta Open Weight Models ($10K):** the guide says the eligible models (Muse Glimmer or Muse Spark Open) may run **on participants' own hardware or through partner inference**. **Our chosen route** is to run one in the phone's Assistant (in the emulator), because that fits the product. That's our choice, not an organiser rule. Whether a model fits is Q15, checked before M4 picks the model, and whether we'd actually qualify is still unconfirmed. This doesn't change the emulator-only scope, and Baseten stays development-only, never in the product.
 - **Most Viral Project ($20K) and Community Vote ($10K):** posting the video on X and sharing the gallery link. These cost little but need the video done early.
 
 ## Scope stays as agreed
@@ -51,14 +51,21 @@ These come on top of the track ranking and use work we're already doing:
 Show the checks that are **actually enforced**: every fact has a status and evidence, research claims are validated before use, commands outside the allowlist are refused, the install log exists, and the image contents are checked against the selection. A short architecture diagram goes in the README and the video. A test count on its own isn't presented as proof of quality.
 
 ### Demo (25%): the video must prove the core outcome
-**Three minutes in total** (participant guide). Each step gets roughly 20–30 seconds, so the script is written to time.
-1. **Problem and pitch** (the chosen problem statement).
-2. **Scan** of a **simulated** phone, labelled as simulated on screen, with unknowns visible.
-3. **Research:** the agent's live steps, its citations, and something it rejected.
-4. **Plan and fit:** a ranked strategy with risks, and an impossible selection refused with a reason.
-5. **Two builds:** Files only, and Files + Assistant. Both artifacts are shown, they differ, and their contents match each selection. Sped-up build time is labelled.
-6. **Boot both in the emulator** (labelled as the emulator): different home screens, a file transfer through Files, and a local model answering in Assistant.
-7. **How it works**, and what's not done yet (the real-phone path is planned and not built).
+**Three minutes in total** (participant guide). The script is written to this timing: **170 seconds of content plus about 10 seconds for transitions**. The two builds and the working services keep most of the time, and the explanation around them stays short.
+
+| # | Section | Time |
+|---|---|---|
+| 1 | **Problem and pitch** (the chosen problem statement) | 15 s |
+| 2 | **Scan** of a **simulated** phone, labelled as simulated on screen, with unknowns visible | 15 s |
+| 3 | **Research:** the agent's live steps, its citations, and something it rejected | 25 s |
+| 4 | **Plan and fit:** a ranked strategy with risks, and an impossible selection refused with a reason | 20 s |
+| 5 | **Two builds:** Files only, and Files + Assistant. Both artifacts shown, they differ, and their contents match each selection | 30 s |
+| 6 | **Boot both in the emulator** (labelled as the emulator): different home screens, a file transfer through Files, and a local model answering in Assistant | 50 s |
+| 7 | **How it works**, and what's not done yet (the real-phone path is planned, not built) | 15 s |
+| | Transitions | ~10 s |
+| | **Total** | **~180 s** |
+
+Condensed or sped-up footage is labelled on screen. The full logs stay in the repo, not in the video.
 Any pre-recorded fallback is labelled as one.
 
 Record short clips at the end of every milestone from M2 onward.

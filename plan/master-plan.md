@@ -85,6 +85,7 @@ Full spec: [milestones/M2-research-agent.md](milestones/M2-research-agent.md).
 **Demo:** `stargate research "<a real model name>"` shows live search steps and a cited report.
 
 ### M3: Strategy and fit engines
+Full spec: [milestones/M3-strategy-fit.md](milestones/M3-strategy-fit.md).
 It ranks how to build the OS for that phone: community tree build / generic system image / stock firmware rebuild / Linux / on-top-of-Android fallback, with reasons, risks and signing implications. The fit engine checks memory, storage, kernel features and AI model size. Over-budget selections are blocked.
 **Demo:** two simulated phones give different ranked plans, and an impossible selection is refused with a reason.
 
@@ -106,7 +107,7 @@ The full guided app from the mockup, wired to M1–M5. You can click through end
 A written test plan for a specific phone covering: exact commands, what changes, how to recover, what could go wrong. On the production phone, only a non-flashing `fastboot boot` test, and only if Q4 confirms it's possible. Strongly preferred: a cheap test phone (Q5).
 **Demo:** the phone shows the StarGate home screen, or we get a precise report of why it couldn't.
 
-### Schedule (deadline Wed 4 Nov, 9:00 PM)
+### Schedule (deadline Wed 4 Nov, 9:00 PM ET = Thu 5 Nov, 2:00 AM GMT)
 
 | Day | Milestone |
 |---|---|
@@ -116,7 +117,7 @@ A written test plan for a specific phone covering: exact commands, what changes,
 | Sun 1 Nov | M3 strategy + fit engines |
 | Mon 2 Nov | M4 StarGate OS image built and booted in the emulator |
 | Tue 3 Nov | M6 app + M5 real-phone image plan (last day for organiser troubleshooting) |
-| Wed 4 Nov (until 9 PM) | Demo video, submission write-up, buffer. No new features |
+| Wed 4 Nov (aim to submit in the afternoon; hard deadline 9:00 PM ET = 2:00 AM GMT Thu 5 Nov) | Demo video, submission write-up, buffer. No new features |
 
 M7 (real phone) comes after the hackathon. The VPN module is optional and last, only if everything above is done.
 
@@ -154,3 +155,7 @@ Only by your decision, recorded here with the date and reason.
 | 31 Oct 2026 | **M4 spike runs alongside M2**, in a separate worktree, to answer Q7, Q8 and the toolchain question by Sun 1 Nov | M4 is the core of the demo and the riskiest step. Finding a blocker on Monday would leave no time to change path |
 | 31 Oct 2026 | **Q11: the emulator runs on your Mac** (Apple M5, 16 GB), using arm64 images, after one approved install | Your answer. The codespace has no hardware virtualization |
 | 31 Oct 2026 | **Rules facts recorded from the participant guide:** deadline 9:00 PM ET on 4 Nov (2:00 AM GMT on 5 Nov), three-minute video, public repo, demo shows only hackathon work, two problem statements. Q1, Q12 and most of Q13 answered; Q15 added (Muse Glimmer as the on-phone model) | The owner supplied the guide as PDFs on 31 Oct. The event pages block automated reading, so these stay owner-supplied |
+| 31 Oct 2026 | **M3 spec drafted while M1 and the M4 spike run.** Bootloader lock is inferred from the verified-boot state (rule R-LOCK-FROM-VBS), because M1 found no official source for the property it read | Keeps Muse busy without waiting on reviews. M3 needs the lock state for strategy decisions |
+| 1 Nov 2026 | **M3 spec v2 after ChatGPT's review.** Strategies that pass the rules are called `candidate`, not "possible", and list what's still unchecked. Unlock has one state from an ordered table. Model choice keeps unknowns as `unconfirmed`, and refuses only when every model definitely fails. Research must match the profile's phone. `plan-v1` carries an exact handoff for M4. A refusal's exit code (7) wins over an explanation failure. Bounded documentation reads are allowed while writing the docs | ChatGPT found the v1 rules could claim more than the facts prove. These changes keep every conclusion honest and give M4 one exact input |
+| 1 Nov 2026 | **M3 spec v2.1: the M4 handoff carries the decision.** It includes the selection result, refusal reasons, input provenance and `build_allowed` (`emulator_only` or `none`). M4 must validate the whole plan and builds only when it's allowed | ChatGPT's re-review: a refused plan could otherwise look the same as an accepted one to M4 |
+| 1 Nov 2026 | **Scoring plan v3 corrected after ChatGPT's review:** the open-weight bonus allows our own hardware or partner inference, so running the model in the phone's Assistant is our chosen route, not an organiser rule. The video has a timed 170-second outline. Schedule labels now give ET and GMT | ChatGPT checked the plan against the supplied guide. Scope (emulator only) and Baseten (development only) are unchanged |
