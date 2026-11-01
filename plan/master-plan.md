@@ -51,7 +51,7 @@ StarGate turns an old Android phone into a private home server. You run the Star
 
 | # | Question | Who answers | Needed by |
 |---|---|---|---|
-| Q1 | ~~Hackathon deadline~~ Answered: submissions due Wed 4 Nov, 9:00 PM. Submission requirements still to confirm | You | Now |
+| Q1 | ~~Hackathon deadline~~ Answered: submissions due **Wed 4 Nov, 9:00 PM Eastern Time**, which is **2:00 AM GMT on Thu 5 Nov** ([participant guide](../docs/participant-guide-excerpt.md), 31 Oct). Late submissions aren't considered | You | Now |
 | Q2 | ~~Which Meta model IDs and endpoint the Meta API gives your key~~ Answered in M0 (30 Oct): `POST https://api.meta.ai/v1/chat/completions`, Bearer key. The key lists `muse-spark-1.3`, `muse-spark-1.2`, `muse-spark-1.1`, two `-contributor` variants, `muse-wonder-1.0`, `muse-image-1.0`, `muse-voice-transcribe-1.0` and `sam-3.1`. The product uses `muse-spark-1.3` | Muse, from a live call | M0 |
 | Q3 | Partly answered (30 Oct): the hackathon Baseten key works only with `meta-models/muse-spark-open-1026`. Development-only use (product principle, 30 Oct): exact role being decided. Endpoint, features and billing are checked in the M2 spike | You + Muse | M2 |
 | Q4 | Your production phone: model, Android version, bootloader unlocked? | You | M7 planning |
@@ -62,9 +62,10 @@ StarGate turns an old Android phone into a private home server. You run the Star
 | Q9 | ~~How Muse CLI signs in on a headless Linux cloud workspace~~ Answered in M0 (30 Oct): the normal Meta account login works inside the codespace, with no API key needed for Muse | Muse docs + M0 | M0 |
 | Q10 | ~~Is `Project-StarGate-Meta-Hackathon` private~~ Answered: it's **public**, and its seed (README + devcontainer) is already pushed. Still open: when do we first push product code? Anything pushed is public | You | M0 |
 | Q11 | ~~Where the emulator runs for M4~~ Answered (31 Oct): on your Mac (MacBook Pro, Apple M5, 16 GB RAM, owner-stated), with arm64 emulator images. Needs one approved install; the exact block comes from the [M4 spike](milestones/M4-spike.md) | You | Before M4 |
-| Q12 | Partly answered (31 Oct, owner's reading of the event page): the theme is open, as long as a project avoids the banned themes and uses the provided Meta tools. The banned list itself isn't recorded here yet. The event pages block automated reading, so Claude couldn't check them | You (from the rules) | Before the video script |
-| Q13 | The official rules URL, plus the submission requirements: video length and access, deliverables, repo visibility, attribution and licensing, deadline timezone | You (from the rules) | Before the video script |
+| Q12 | ~~The theme and problem statements~~ Answered (31 Oct, [participant guide](../docs/participant-guide-excerpt.md)): two problem statements, **Build for Your World** and **Push the Frontier**, plus a list of anti-projects, none of which StarGate resembles. Which one StarGate answers is your call (the [scoring plan](scoring-plan.md) recommends Build for Your World) | You | Before the video script |
+| Q13 | Mostly answered (31 Oct, [participant guide](../docs/participant-guide-excerpt.md)): a **three-minute demo video**, a **public repository**, everyone listed on the submission page, and the demo may show only work built during the hackathon. Still open: the Official Rules document itself (licensing and attribution terms), and whether this private planning repo must also be public | You | Before submission |
 | Q14 | Does `muse-spark-1.3` support tool calling and structured JSON output on the Meta API? This decides agent mode or pipeline mode for research | Muse, from the M2 spike | M2 |
+| Q15 | What are **Muse Glimmer** and **Muse Spark Open** (size, licence, formats), and could Muse Glimmer run on the phone as the Assistant model? Muse Glimmer is listed as a Meta open-weight model in the participant guide, and a project using it on its own hardware is eligible for the $10K open-weight bonus prize. Facts unknown until checked | Muse, from official docs (M4 spike or M4) | M4 |
 
 ## 5. The path: milestones
 
@@ -106,7 +107,7 @@ The full guided app from the mockup, wired to M1–M5. You can click through end
 A written test plan for a specific phone covering: exact commands, what changes, how to recover, what could go wrong. On the production phone, only a non-flashing `fastboot boot` test, and only if Q4 confirms it's possible. Strongly preferred: a cheap test phone (Q5).
 **Demo:** the phone shows the StarGate home screen, or we get a precise report of why it couldn't.
 
-### Schedule (deadline Wed 4 Nov, 9:00 PM)
+### Schedule (deadline Wed 4 Nov, 9:00 PM ET = Thu 5 Nov, 2:00 AM GMT)
 
 | Day | Milestone |
 |---|---|
@@ -116,7 +117,7 @@ A written test plan for a specific phone covering: exact commands, what changes,
 | Sun 1 Nov | M3 strategy + fit engines |
 | Mon 2 Nov | M4 StarGate OS image built and booted in the emulator |
 | Tue 3 Nov | M6 app + M5 real-phone image plan (last day for organiser troubleshooting) |
-| Wed 4 Nov (until 9 PM) | Demo video, submission write-up, buffer. No new features |
+| Wed 4 Nov (aim to submit in the afternoon; hard deadline 9:00 PM ET = 2:00 AM GMT Thu 5 Nov) | Demo video, submission write-up, buffer. No new features |
 
 M7 (real phone) comes after the hackathon. The VPN module is optional and last, only if everything above is done.
 
@@ -153,6 +154,8 @@ Only by your decision, recorded here with the date and reason.
 | 30 Oct 2026 | **Product principle:** StarGate is free to use, and the only key a user needs is their own **Meta API key**. Baseten (`muse-spark-open-1026`) is used only during development, never in the product people run | Your direction: it benefits both Meta and the user, with one key for an intelligent platform that builds their whole system |
 | 31 Oct 2026 | **M4 spike runs alongside M2**, in a separate worktree, to answer Q7, Q8 and the toolchain question by Sun 1 Nov | M4 is the core of the demo and the riskiest step. Finding a blocker on Monday would leave no time to change path |
 | 31 Oct 2026 | **Q11: the emulator runs on your Mac** (Apple M5, 16 GB), using arm64 images, after one approved install | Your answer. The codespace has no hardware virtualization |
+| 31 Oct 2026 | **Rules facts recorded from the participant guide:** deadline 9:00 PM ET on 4 Nov (2:00 AM GMT on 5 Nov), three-minute video, public repo, demo shows only hackathon work, two problem statements. Q1, Q12 and most of Q13 answered; Q15 added (Muse Glimmer as the on-phone model) | The owner supplied the guide as PDFs on 31 Oct. The event pages block automated reading, so these stay owner-supplied |
 | 31 Oct 2026 | **M3 spec drafted while M1 and the M4 spike run.** Bootloader lock is inferred from the verified-boot state (rule R-LOCK-FROM-VBS), because M1 found no official source for the property it read | Keeps Muse busy without waiting on reviews. M3 needs the lock state for strategy decisions |
 | 1 Nov 2026 | **M3 spec v2 after ChatGPT's review.** Strategies that pass the rules are called `candidate`, not "possible", and list what's still unchecked. Unlock has one state from an ordered table. Model choice keeps unknowns as `unconfirmed`, and refuses only when every model definitely fails. Research must match the profile's phone. `plan-v1` carries an exact handoff for M4. A refusal's exit code (7) wins over an explanation failure. Bounded documentation reads are allowed while writing the docs | ChatGPT found the v1 rules could claim more than the facts prove. These changes keep every conclusion honest and give M4 one exact input |
 | 1 Nov 2026 | **M3 spec v2.1: the M4 handoff carries the decision.** It includes the selection result, refusal reasons, input provenance and `build_allowed` (`emulator_only` or `none`). M4 must validate the whole plan and builds only when it's allowed | ChatGPT's re-review: a refused plan could otherwise look the same as an accepted one to M4 |
+| 1 Nov 2026 | **Scoring plan v3 corrected after ChatGPT's review:** the open-weight bonus allows our own hardware or partner inference, so running the model in the phone's Assistant is our chosen route, not an organiser rule. The video has a timed 170-second outline. Schedule labels now give ET and GMT | ChatGPT checked the plan against the supplied guide. Scope (emulator only) and Baseten (development only) are unchanged |
