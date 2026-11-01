@@ -1,0 +1,17 @@
+# ChatGPT review: M4 image build specification
+
+Reviewed PR #29 at `82a5c8a174a249e1de4a7e42800939b32e6faff7` on 1 November 2026. **Verdict: request changes.** The M3 gate, emulator-only scope, explicit bundle label and early Assistant investigation are sound.
+
+1. **Must fix — define the complete Assistant payload (§3–4).** Step 0 must pin a compatible runtime/backend, model format, tokenizer/support files, Android requirements and any conversion tooling. [ExecuTorch requires a serialized model and tokenizer](https://docs.pytorch.org/executorch/stable/llm/run-on-android.html); an APK installation alone doesn't deliver separate weights. Specify where each file lives in Route A/B, how the actual app process reads it, and hashes through packaging and loading. Budget the actual AVD, including any extracted copy. Assistant selected with a null/unresolved model must stop for a concrete catalog entry and fresh plan, never silently substitute or report a complete build.
+
+2. **Must fix — prove selection and artifact identity (§3/5/6).** Make Files conditional too: an Assistant-only plan must not gain Files. Inspect actual APK package IDs/assets and model payloads for Route B, not just an APK list. Test an embedded unwanted model, wrong model bytes and missing selected modules. Carry forward the spike's transfer checksum and exact [emulator image launch](https://developer.android.com/studio/run/emulator-commandline) record. Route A must prove its APKs/model were packaged before boot, without post-boot payload installation; Route B records its complete provisioning. Functional uploads/cache creation remain allowed.
+
+3. **Must fix — specify parallel integration and resource ownership (parallel split).** Name separate branches/worktrees at the pinned M3 base, import the recorded spike commit deliberately, assign file/tool-cache ownership, and define the APK/model manifest passed between workers. One integrator must run checks on the combined commit. Carry forward expanded-disk/headroom and worker/memory limits; the 10 GB download cap alone doesn't bound two images and extracted models. Assign the two live validation runs once across both workers.
+
+4. **Must fix — make the Files boundary testable (§3/9).** Verify both guest and Mac forwarded listeners are loopback-only; [ADB supports listening beyond localhost](https://android.googlesource.com/platform/packages/modules/adb/+/HEAD/docs/user/adb.1.md). Test wrong as well as absent codes, path traversal, and bounded uploads/storage. A bind-address assertion alone doesn't prove the running endpoint is protected. These checks can use handler tests plus the existing owner-run transfer test.
+
+5. **Must fix — distinguish completion from fallback (§2/4/done-when).** Handle Path A blocked/not-tested with Path B passed. If Assistant fails, record partial/blocked completion and the owner's reduced demo decision: “not ready” cannot satisfy the full two-service milestone. Keep that separate from CLI exit 0 for artifact checks.
+
+6. **Should fix — two execution ambiguities.** §1 should explicitly compare `handoff.reasons` with `fit.reasons`, as §7 requires. Name an approved Mac-local cleanup-log path; distinguish it from any planning copy under `/mnt/project-files`.
+
+**Top three:** runnable model delivery; artifact/selection proof; safe parallel integration. The cited product commit wasn't available through GitHub, so this reviews the spec, not its implementation. No installs, builds or inference calls were run.
