@@ -1,6 +1,6 @@
 # M6: The app, end to end (spec)
 
-Status: v2, 1 Nov 2026. v2 folds in [GPT's night-batch review](../../reviews/2026-11-01-chatgpt-night-batch-pr34.md): the phone's web server is now its own base component (Link), every screen is tied to the current inputs by hash, and the browser rules are written down (sections 2, 2a, 2b, 6). v1 wired M1 to M5 into the guided app from the approved mockup (https://claude.ai/artifact/RFzSwh3CZbmsgrAfbD7MjD). It follows master-plan section 7 (1 Nov): no product name, only the logo mark; the phone shows controls only; the full experience lives on the computer; **cable first**, with Wi-Fi only once the cable works; the demo boots in the Android Emulator and says so.
+Status: v2.1, 1 Nov 2026. v2.1 fixes GPT's re-review: the signing check covers only our four apps, sign-in never changes state on GET, origins are compared in full, Link has its own controls, and file transfers stream (sections 1b, 2, 2a, 2b, 3). v2, 1 Nov 2026. v2 folds in [GPT's night-batch review](../../reviews/2026-11-01-chatgpt-night-batch-pr34.md): the phone's web server is now its own base component (Link), every screen is tied to the current inputs by hash, and the browser rules are written down (sections 2, 2a, 2b, 6). v1 wired M1 to M5 into the guided app from the approved mockup (https://claude.ai/artifact/RFzSwh3CZbmsgrAfbD7MjD). It follows master-plan section 7 (1 Nov): no product name, only the logo mark; the phone shows controls only; the full experience lives on the computer; **cable first**, with Wi-Fi only once the cable works; the demo boots in the Android Emulator and says so.
 
 ## Goal
 Two connected parts, both clickable end to end on simulated phones:
@@ -37,33 +37,35 @@ Rendering a real file isn't enough: the file must belong to the phone and choice
 
 ### 1b. Browser rules for the platform (new in v2)
 Loopback and a private forwarded port don't replace these:
-- **Sign-in:** `stargate app` prints a one-time start link with a random token in the terminal. Opening it sets a session cookie (`HttpOnly`, `SameSite=Strict`, `Secure` when served over the forwarded https URL) and the token stops working. Every request without a valid session is refused (401).
-- **Changes only by POST.** Every action that changes something (run a step, start a build, go live) is a POST with a CSRF token in a header that must match the session. GET never changes anything.
-- **Host and Origin checks:** the `Host` header must be `127.0.0.1:<port>`, `localhost:<port>`, or the one forwarded host the owner passes on the command line. A POST's `Origin` must be one of those. Anything else is refused (403). No CORS headers are ever sent.
+- **Sign-in:** `stargate app` prints a one-time start link with a random token in the terminal. Opening the link (GET) only shows a "Sign in" button and changes nothing. The button POSTs the token; that POST is the one request allowed without a session or CSRF token, and it still needs an allowed `Origin`. It sets a session cookie (`HttpOnly`, `SameSite=Strict`, `Secure` when served over the forwarded https URL) plus a CSRF token, and the start token stops working. Every other request without a valid session is refused (401).
+- **Changes only by POST.** Every action that changes something (run a step, start a build, go live) is a POST with a CSRF token in a header that must match the session. GET never changes anything, with no exceptions.
+- **Host and Origin checks:** the `Host` header must be `127.0.0.1:<port>`, `localhost:<port>`, or the one forwarded host the owner passes on the command line. A POST's `Origin` is compared as a **full origin** (scheme, host and port) against an exact list: `http://127.0.0.1:<port>`, `http://localhost:<port>`, and `https://<forwarded host>`. A missing `Origin` on a POST is refused. Anything else is refused (403). No CORS headers are ever sent.
 - **Safe rendering:** model text, source quotes and file names are inserted as plain text (`textContent`), never as HTML. Every page sends a Content-Security-Policy that allows only the app's own scripts and styles (no inline scripts, no outside hosts).
 - **Limits:** request bodies at most 64 KB; one live run at a time per step.
 
 ## 2. The phone's page (computer side, served by the phone)
 - **Link: the base component that serves the page.** Link is a small app of its own, included in **every** build, like the launcher. It is the only app on the phone that listens on a socket. It listens on `127.0.0.1` inside the emulator only, and the owner reaches it with `adb -s "$SERIAL" forward` as in M4 3a. It serves a small web page (the tabs for the selected services, the logo and the status line "Connected by cable").
 - **Files and the Assistant don't listen on sockets.** Each one offers an Android **bound service** that Link calls. The services are protected with `android:permission` at `protectionLevel="signature"`, so only apps signed with the same key may bind.
+- **File transfers stream.** A Binder call's shared buffer is about 1 MB, far below the 50 MB upload limit, so file bytes never travel inside one Binder call. Link and Files pass a pipe (`ParcelFileDescriptor`) and copy in chunks; only names, sizes and results go in the call itself.
 - **Only selected services appear.** A Files-only build is launcher + Link + Files. An Assistant-only build is launcher + Link + Assistant, with **no** Files app (as M4 requires). Link shows only the tabs whose service is in the build, and its manifest lists what it may bind to.
 - **Files tab:** list, upload and download. All of M4 3a's rules apply, and they are enforced **in both places**: Link checks the access code, path rules and size limits before calling Files, and Files checks the path rules and size limits again inside its service.
 - **Assistant tab:** chat with the phone's Assistant. The Assistant APK keeps **no** network permission in the local variant (M4c). The answer, the mode and model ID, and the one-line stats come back to the page. If the build has the cloud variant (M4c), the page shows the mode switch. Otherwise it shows "On the phone" only.
 - **The status line is information only, never a switch** (owner, 1 Nov).
 
 ### 2a. Browser rules for the phone's page (new in v2)
-- **Access code to session:** the page asks for the access code shown on the phone. A correct code sets a session cookie (`HttpOnly`, `SameSite=Strict`) and a CSRF token. Wrong codes are refused, and five wrong codes in a row lock sign-in for one minute.
+- **Access code to session:** the page asks for the access code shown on the phone. The code is sent by POST (the one request allowed without a session, still with an allowed `Origin`). A correct code sets a session cookie (`HttpOnly`, `SameSite=Strict`) and a CSRF token. Wrong codes are refused, and five wrong codes in a row lock sign-in for one minute. Renewing the code or stopping Link signs out every session.
 - **Changes only by POST** with the CSRF header. Upload, delete and asking a question are POSTs.
-- **Host and Origin:** only `127.0.0.1:<port>` and `localhost:<port>`. No CORS headers.
+- **Host and Origin:** `Host` only `127.0.0.1:<port>` or `localhost:<port>`; a POST's `Origin` must be exactly `http://127.0.0.1:<port>` or `http://localhost:<port>` (full origin), and a missing `Origin` is refused. No CORS headers.
 - **Safe rendering:** answers and file names are inserted with `textContent`, and every page sends a strict Content-Security-Policy.
 - **Chat limits:** a question is at most 2,000 characters and 8,000 bytes. One answer is generated at a time; a second question while one is running gets "busy" (429). An answer that takes longer than 60 seconds is stopped and reported.
 
 ### 2b. Signing (new in v2)
-Launcher, Link, Files and the Assistant are signed with the same key. The build checks that every app in the image has the same signing certificate (SHA-256 of the certificate, read from each built APK) and records it in `build-manifest.json`. A mismatch fails with 8. A test-only app signed with a different key is built for the negative test (section 7) and is never put in an image.
+Our own apps, a fixed list of packages (launcher, Link, Files and the Assistant, whichever the build includes), are signed with the same key. The build checks that **those packages only** share one signing certificate (SHA-256 of the certificate, read from each built APK) and records it in `build-manifest.json`. A mismatch among them fails with 8. Stock Android packages are signed with several different keys, which is normal: they are not compared, and they are never re-signed to pass a check. A test-only app signed with a different key is built for the negative test (section 7) and is never put in an image.
 
 ## 3. The phone's own screen (controls only)
 - **Home:** the launcher shows a large clock, the logo mark in its own header (drawn by the launcher, not by changing Android's status bar), and one centred tile per selected service plus Status. It works in portrait and landscape.
-- **Files controls:** running or stopped, start and stop, show or renew the access code.
+- **Link controls (every build):** running or stopped, start and stop, show or renew the access code. Renewing the code or stopping Link signs out every browser session. These live on a base screen, so an Assistant-only build has them too.
+- **Files controls:** running or stopped, and storage used.
 - **Assistant controls:** ready or not, the model ID and hashes (small), the local or cloud switch (cloud variant only), and "Self-test" (asks a fixed question and shows the stats line).
 - **Status:** build ID, selected services, and the connection. **Phone network:** a switch that warns first ("Services will only be reachable by cable"). It uses Android's own internet settings panel (`Settings.Panel.ACTION_INTERNET_CONNECTIVITY`) and needs no extra privilege. A direct toggle is out of scope unless it works for our system app without new privileges, which Muse checks and reports.
 - **Out of scope** (section 7 / GPT): system updates, a privileged reboot, and any new updater.
@@ -81,7 +83,9 @@ No product name anywhere in the UI. The logo mark (from GPT, file in the product
 - Replays need no network. A live step without a key shows M0's error, not a crash.
 - **Link (2, 2a):** binds to `127.0.0.1` only; M4 3a's tests still pass through Link; the access-code lockout; CSRF, Host and Origin refusals; injection in file names and answers is shown as text; a 2,001-character question is refused; a second question while one runs gets 429; a slow answer stops at 60 s.
 - **Composition:** Files-only, Assistant-only and Files + Assistant builds each contain exactly launcher + Link + their services. An Assistant-only build has no Files app. Link shows only the tabs in the build.
-- **Bound services and permissions:** the signature permission is in each service's merged manifest; Link is the only app with a listening socket; the local Assistant has no permissions and the cloud Assistant has exactly `INTERNET` (read from the built APKs); Files has no network permission beyond what M4 allows; every app shares one signing certificate (2b).
+- **Bound services and permissions:** the signature permission is in each service's merged manifest; Link is the only app with a listening socket; the local Assistant has no permissions and the cloud Assistant has exactly `INTERNET` (read from the built APKs); Files has no network permission beyond what M4 allows; our four packages share one signing certificate, a project app signed differently fails with 8, and stock packages with other certificates are allowed and left unchanged (2b).
+- **Streaming:** a 50 MB upload and download pass through Link and Files with matching hashes, and no Binder call carries file bytes.
+- **Sign-in:** opening the start link (GET) changes nothing; the sign-in POST works once; an `Origin` with the wrong scheme or port is refused; renewing the code or stopping Link ends existing sessions.
 - The launcher: only selected tiles, the logo in its header, and both orientations (layout test).
 - The branding scan from section 5.
 

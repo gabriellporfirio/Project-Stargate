@@ -1,6 +1,6 @@
 # M5: Real-phone install plan, drafted by a Meta model and checked by code (spec)
 
-Status: v2, 1 Nov 2026, for review. v2 fixes ChatGPT's review of v1 ([night batch, item 1](../../reviews/2026-11-01-chatgpt-night-batch-pr34.md)): code now walks the draft step by step with an explicit phone state, partitions are a closed list, unknown facts stop the plan, the profile is bound to the plan by hash, citations are tied to rules, the second source uses its canonical address, and replay equality is defined. Builds on M1 (profiles), M2 (fetch boundary and report layers), M3 (`plan-v1`) and M4 (the emulator image). It carries the owner's demo requirement from master-plan section 7 (1 Nov): **a Meta model visibly makes a real, useful decision, and code checks it before it counts.**
+Status: v2.1, 1 Nov 2026, for review. v2.1 fixes GPT's re-review: one legal ending for each unknown fact, unlock prerequisites that aren't confirmed can never give an accepted plan, and rules are marked as Android source facts or project policy (section 3). v2, 1 Nov 2026. v2 fixes ChatGPT's review of v1 ([night batch, item 1](../../reviews/2026-11-01-chatgpt-night-batch-pr34.md)): code now walks the draft step by step with an explicit phone state, partitions are a closed list, unknown facts stop the plan, the profile is bound to the plan by hash, citations are tied to rules, the second source uses its canonical address, and replay equality is defined. Builds on M1 (profiles), M2 (fetch boundary and report layers), M3 (`plan-v1`) and M4 (the emulator image). It carries the owner's demo requirement from master-plan section 7 (1 Nov): **a Meta model visibly makes a real, useful decision, and code checks it before it counts.**
 
 ## Goal
 For one phone profile and its accepted M3 plan, StarGate writes a **limited install-routing proposal**: the order of the unlock, reboot and flash steps a person would follow to put the image on that real phone. A Meta model drafts the steps from official Android pages that code has fetched. Code then checks every step against the phone's facts and the fetched pages, and rejects any draft that breaks a rule.
@@ -50,7 +50,11 @@ Each step has a short plain-English reason, plus a **citation**: a fetch record 
 The model cannot write free-text commands, change a fact, change M3's selection or `build_allowed`, or edit an image. Its output is stored as **model notes** (M2 3c) until code accepts it.
 
 ## 3. What code checks (the accept or reject rules)
-Every rule lives in `docs/install-rules.md`, with the fact IDs it reads and its **anchor quote**: the exact sentence from one of the two pages that justifies the rule, fixed by us, and checked to exist in the fetched page on every run (if it's missing, the run stops with exit 6, because the source changed). A draft is **accepted** only if every rule passes.
+Every rule lives in `docs/install-rules.md`, with the fact IDs it reads and its **kind**:
+- **Source rule:** it rests on a fact from one of the two Android pages. It carries an **anchor quote**, the exact sentence from that page, fixed by us and checked to exist in the fetched page on every run (if it's missing, the run stops with exit 6, because the source changed).
+- **Policy rule:** it's our own project, schema or provider rule, not an Android fact. It carries a reference to its place in our docs (this spec, the schema or the provider contract) and **no** Android quote. No Android sentence is ever borrowed to dress up a policy rule.
+
+A draft is **accepted** only if every rule passes and no step is conditional (below).
 
 **Code walks the draft step by step with an explicit phone state:** the current mode (`system`, `bootloader` or `fastbootd`), whether the bootloader is known to be unlocked, whether OEM unlocking was checked, and whether the erase warning was given. It starts from the profile: mode `system`; unlocked only if `boot.bootloader_locked` is `false` (measured or inferred). Each step must be allowed in the current state, and then changes it:
 
@@ -61,23 +65,25 @@ Every rule lives in `docs/install-rules.md`, with the fact IDs it reads and its 
 | `unlock_bootloader` | mode `bootloader`, OEM unlocking checked, the erase warning already given, and the phone not already unlocked | unlocked |
 | `reboot_fastbootd` | mode `bootloader` and unlocked | mode `fastbootd` |
 | `check_is_logical` | mode `bootloader` or `fastbootd` | the next step must be `stop_for_check` |
-| `stop_for_check` | directly after `check_is_logical` | the plan ends; result `unconfirmed` |
+| `stop_for_check` | directly after `check_is_logical` or `check_oem_unlocking` | the plan ends; result `unconfirmed` |
 | `flash` | unlocked, and the step's mode equals the current mode | (no change) |
 | `wipe_data` | mode `bootloader` or `fastbootd`, and unlocked | (no change) |
 | `reboot_system` | the last step | mode `system` |
 
 So "flash, then unlock" fails: flashing needs the unlocked state, which only `unlock_bootloader` (or an already-unlocked profile) gives. Android's fastbootd page also says flashing needs an unlocked device.
 
-| Rule | Check |
-|---|---|
-| `I-FORMAT` | The reply parses against `install-draft-v1`, and the provider says it finished normally (`finish_reason` `stop`). A truncated, malformed or non-stop reply is a rejected draft, never repaired by code |
-| `I-QUOTE` | Every quote is non-empty and appears **word for word** in the page its record names (after whitespace is normalised). Each step cites the rule it relies on, and for `unlock_bootloader`, `reboot_fastbootd`, `flash` and the erase warning, the quote must be that rule's anchor quote |
-| `I-TYPES` | Only the step types above, and only partitions from the closed list |
-| `I-STATE` | Every step passes the state table above |
-| `I-DYNAMIC` | If `boot.dynamic_partitions` is `true`: `flash system` must use mode `fastbootd`. If `false`: mode `bootloader`. Anchor: the fastbootd page's sentence that the bootloader must not allow flashing dynamic partitions |
-| `I-UNKNOWN` | If `boot.dynamic_partitions` is `unknown` or `conflicting`, the plan must not contain `flash`. It must stop with `check_is_logical system` then `stop_for_check`, and the result is `unconfirmed`. The same applies if `boot.bootloader_locked` is `unknown` or `conflicting`: the plan stops after `check_oem_unlocking` with `stop_for_check`'s explanation, and the result is `unconfirmed` |
-| `I-UNLOCK` | If the phone is already unlocked (`boot.bootloader_locked` is `false`), the plan must not contain `unlock_bootloader`, and it is valid even when `boot.oem_unlock_supported` is `false` (M3's already-unlocked case). If the phone is locked and `boot.oem_unlock_supported` is `false`, only `do_not_install` is accepted. If it's locked and `boot.oem_unlock_allowed` isn't `true`, the plan must say unlocking may be unavailable, quoting the source's advice, and never claim it is allowed |
-| `I-WIPE` | Before `unlock_bootloader`, the plan warns that unlocking erases the phone, quoting the "Flash with Fastboot" page's sentence ("For privacy reasons, unlocking the bootloader deletes user data.") |
+**A listed check is not its answer.** `check_oem_unlocking` and `check_is_logical` only tell the person what to look at. Code never treats them as having returned a value.
+
+| Rule | Kind | Check |
+|---|---|---|
+| `I-FORMAT` | policy (schema and provider contract) | The reply parses against `install-draft-v1`, and the provider says it finished normally (`finish_reason` `stop`). A truncated, malformed or non-stop reply is a rejected draft, never repaired by code |
+| `I-QUOTE` | policy (citation rule) | Every quote is non-empty and appears **word for word** in the page its record names (after whitespace is normalised). Each step cites the rule it relies on. For `unlock_bootloader`, `reboot_fastbootd`, `flash` and the erase warning, which rest on source rules, the quote must be that source rule's anchor quote. Steps resting only on policy rules cite the rule ID, with no Android quote |
+| `I-TYPES` | policy (project scope: `system` only) | Only the step types above, and only partitions from the closed list |
+| `I-STATE` | source (fastbootd page: flashing needs an unlocked device; Muse pins the exact sentence from the fetched page, and if no single sentence says it word for word, this rule is marked policy and says so) | Every step passes the state table above |
+| `I-DYNAMIC` | source | If `boot.dynamic_partitions` is `true`: `flash system` must use mode `fastbootd`. If `false`: mode `bootloader`. Anchor: the fastbootd page's sentence that the bootloader must not allow flashing dynamic partitions |
+| `I-UNKNOWN` | policy | When a critical fact is `unknown` or `conflicting`, exactly one ending is legal, the plan contains no `unlock_bootloader`, `flash` or `wipe_data`, and the result is `unconfirmed`:<br>• **lock state unknown** (dynamic partitions known or not): `check_oem_unlocking` → `stop_for_check`;<br>• **dynamic partitions unknown, lock state known**: `reboot_bootloader` → `check_is_logical system` → `stop_for_check`;<br>• **both unknown**: the lock-state ending, because it comes first |
+| `I-UNLOCK` | source ("Flash with Fastboot" page: without OEM unlocking the bootloader can't be unlocked) | **Already unlocked** (`boot.bootloader_locked` `false`): the plan must not contain `unlock_bootloader`, and it is valid even when `boot.oem_unlock_supported` is `false` (M3's already-unlocked case). **Locked, unlock not supported** (`boot.oem_unlock_supported` `false`): only `do_not_install`. **Locked, unlock confirmed** (supported and allowed both `true`): a normal plan may be accepted. **Locked, unlock not confirmed** (supported or allowed is `unknown`, `conflicting`, or allowed is `false`): every step after `check_oem_unlocking` must be marked conditional, "only if the check shows OEM unlocking is allowed". Code still runs the state table on those steps as if the condition holds, but the result is `unconfirmed`, never `accepted`, and a warning alone never changes that |
+| `I-WIPE` | source | Before `unlock_bootloader`, the plan warns that unlocking erases the phone, quoting the "Flash with Fastboot" page's sentence ("For privacy reasons, unlocking the bootloader deletes user data.") |
 
 **Unresolved, always listed:** image compatibility with this phone, signing and verified boot, the A/B slot to flash, and the M7 prerequisites. No rule can resolve them in M5.
 
@@ -114,8 +120,11 @@ Muse builds behind a provider interface and tests with a fake model. Only `muse-
   - `flash vendor` or any partition outside the closed list (rejected);
   - a quote changed by one word, an empty quote, or a step citing the wrong rule (rejected);
   - a truncated or malformed reply, or `finish_reason` other than `stop` (rejected by `I-FORMAT`);
-  - dynamic partitions unknown: only "check, then stop", result `unconfirmed`; a `flash` after `check_is_logical` is rejected;
+  - each `I-UNKNOWN` case with its one legal ending, as fake-model drafts: lock unknown, dynamic partitions unknown, and both unknown; any other ending, or a `flash`, `unlock_bootloader` or `wipe_data` in them, is rejected;
+  - locked with unlock supported or allowed unknown: a full plan is `unconfirmed` with every step after the check conditional; the same plan with an unconditional step is rejected; a plan with a warning but no conditions is never `accepted`;
+  - locked with unlock confirmed: the normal plan is `accepted`;
   - locked with unlock not supported: only `do_not_install`; already unlocked with unlock not supported: an install plan without `unlock_bootloader` is accepted;
+  - the rule registry: every source rule has an anchor quote found in the fetched page, every policy rule has a local reference and no Android quote;
   - a profile whose SHA-256 differs from the plan's recorded profile hash (exit 6).
 - The repair round: first draft rejected, second accepted. Both drafts rejected gives exit 10, with no fallback plan.
 - Two profiles give different accepted plans: `flagship` (dynamic partitions: fastbootd) and one named profile whose fixture really has `boot.dynamic_partitions` `false` and whose M3 plan isn't refused (Muse checks `old32` first and names the one it uses; fixtures are never edited).
