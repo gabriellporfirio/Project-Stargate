@@ -36,7 +36,7 @@ The Meta API key's model list (Q2, 30 Oct) doesn't include Muse Spark Open. If t
 ## 3. Keys on the phone
 - No key is ever baked into an image, an APK, a build manifest, a log or a screenshot.
 - The user types the key into the Assistant's settings at runtime (in the demo, on the emulator). It's stored in the app's private storage only, encrypted with the Android Keystore, and can be deleted from the same screen.
-- Requests go only to the two hosts in section 1, over HTTPS. No other host is allowed (tested).
+- Requests go only to two hosts, over HTTPS: `api.meta.ai` and Baseten's inference host. Baseten's exact host and request format are **unknown** here; M4c takes them from Baseten's official docs (or the M2 spike's Baseten notes, if it recorded them) and pins them before any call. No other host is allowed (tested).
 - The demo video never shows a key. The settings screen shows only the last four characters.
 
 ## 4. Network
