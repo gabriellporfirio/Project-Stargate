@@ -78,7 +78,7 @@ Every build writes `build-manifest.json` (**`build-v1`**): the plan's SHA-256, t
 - Route A: the image's size against its partition limit is checked and recorded. This resolves the "image size" check M3 left unresolved, for the emulator only.
 
 ### 5a. Where the expected model hashes come from
-M3's plan and catalog name the model, its revision, and each file's name and size, but **not** per-file SHA-256 values. M3's schema stays as it is. The expected hashes come from the **approved Assistant manifest** (`assistant-manifest.json`, section 11), which M4b writes after downloading the files and the owner approves with its install list. It's committed, and its own SHA-256 is recorded in `build-manifest.json`.
+M3's plan and catalog name the model, its revision, and each file's name and size, but **not** per-file SHA-256 values. M3's schema stays as it is. The expected hashes come from the **approved Assistant manifest** (`assistant-manifest.json`, section 11), which M4b writes after downloading the files. There are two separate approvals: the owner approves the install list **before** anything is downloaded, and approves the completed manifest (with its hashes) **after** hashing and before any build uses it. It's committed, and its own SHA-256 is recorded in `build-manifest.json`.
 
 Before any build step, `stargate build` binds the manifest to the plan, and stops with exit 9 if any of these differ:
 1. The manifest's model ID and source revision equal the handoff's.
@@ -87,6 +87,7 @@ Before any build step, `stargate build` binds the manifest to the plan, and stop
 
 Then the section 5 checks compare the hash of every model file in the artifact with the manifest. A file with the right name and size but different content fails with 8.
 
+## 6. Boot proof on the Mac (owner-run steps, written by Muse)
  (owner-run steps, written by Muse)
 Carried over from the spike:
 - **Transfer:** the owner downloads each artifact from the codespace through the browser and checks it with `shasum -a 256` against the manifest. A mismatch means stop.
@@ -160,7 +161,7 @@ If any line can't be ticked, M4 is reported as partial or blocked under section 
 | Tool folders it may write | `/workspaces/m4a-tools/`, `/workspaces/m4a-downloads/` | `/workspaces/m4b-tools/`, `/workspaces/m4b-downloads/` |
 
 - **The spike:** M4a's first commit brings in the recorded spike commit on purpose (`git merge <spike commit>`, with the commit named in the message). The spike's tools in `/workspaces/m4-tools/` are **read-only** for both workers. If a worker needs more tools, they go in its own tool folder through its own approval.
-- **What M4b hands over:** `assistant-manifest.json`, with the model ID and source revision exactly as the new plan's handoff names them, the Assistant APK (path, package name, version, SHA-256), the runtime version, each model file (name, bytes, SHA-256), the minimum Android version, the RAM need, and the target path for each route (section 4b). M4b computes the hashes from the downloaded files, and the owner approves the manifest with the install list. M4a only reads it (section 5a).
+- **What M4b hands over:** `assistant-manifest.json`, with the model ID and source revision exactly as the new plan's handoff names them, the Assistant APK (path, package name, version, SHA-256), the runtime version, each model file (name, bytes, SHA-256), the minimum Android version, the RAM need, and the target path for each route (section 4b). M4b computes the hashes from the downloaded files, and the owner approves the completed manifest before any build uses it (section 5a). M4a only reads it (section 5a).
 - **Joining up:** M4a is the only integrator. It merges `m4b-assistant` into `m4a-build` with a merge commit, then runs the full test suite, the section 5 checks and both demo builds **on that combined commit**. The reviewer Muse checks the combined commit.
 - **Shared limits in the codespace:**
   - At most **one** Android or Gradle build runs at a time across both workers, with at most 2 workers and 2 GB of heap.
