@@ -1,6 +1,6 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v2.1, 1 Nov 2026. v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+Status: v2.2, 1 Nov 2026. v2.2 makes the cost reservation a true upper bound ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
 
 **Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
@@ -75,7 +75,7 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 **Limits:**
 - **Attempts:** at most **5 per provider** for all of M4c, counting every compatibility probe, retry, emulator demo and rerun.
 - **Dollars:** at most **$5** of Baseten credit and **$2** of Meta credit, and never more than the remaining credit the owner recorded (the smaller of the two applies). Before the first call to a provider, the owner reads the remaining balance on its billing page and records it in the ledger.
-- **Input:** one question, at most 2,000 characters, no history.
+- **Input:** one question, at most 2,000 characters **and** at most 8,000 bytes once encoded as UTF-8, no history. The whole request body sent to the provider is capped at **16 KB**; a bigger body is refused before sending.
 - **Output:** `max_completion_tokens` (Meta) and `max_tokens` (Baseten) at most **4096**, and a reply body over 256 KB is cut off and labelled.
 - **Time:** 60 seconds per request, including the one retry.
 
@@ -83,13 +83,21 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 
 **Reserve before sending.** Before anything leaves the codespace or the phone, the gate:
 1. reads the ledger and refuses if the attempt limit or the dollar limit would be passed, or the model has no price;
-2. reserves one attempt and the **largest possible cost** of that request (2,000 characters counted as 2,000 input tokens, plus 4,096 output tokens, at the pinned price);
+2. reserves one attempt and the **largest possible cost** of that request, worked out as below;
 3. saves the reservation to the ledger, and only then sends.
+
+**How the largest possible cost is worked out.** Character counts don't tell you token counts: the same text can make different numbers of tokens on different models, and non-English text often makes more (Meta's [token counting](https://dev.meta.ai/docs/token-counting) page). So the reservation doesn't guess from characters. For each allowed model, the ledger holds a **pinned input-token ceiling** for the complete billable request (the question, the chat template and anything the provider adds), with its source:
+- by default, the ceiling is **16,384 input tokens**: two tokens for every byte of the 16 KB request-body cap. Every model's tokenizer turns a byte of text into at most one token, so this is twice what the body can hold and also covers the provider's own template;
+- the ceiling may be lowered only with a cited source for that model's tokenizer, recorded in the ledger;
+- the reserved cost is that ceiling × the pinned input price, plus 4,096 output tokens × the pinned output price.
+
+**If the bound is ever wrong.** If a reply's `usage` shows more input or output tokens than were reserved, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner then decides whether to change the ceiling through this plan.
 
 A retry is a new attempt and goes through the same three steps. After the reply, the reservation is replaced with the real cost from `usage`. If the call timed out, failed or came back without `usage`, the full reservation is kept. Nothing ever gives an attempt back, and a restart, a new host or a wiped AVD never restores any allowance.
 
 **The phone's share.** The phone can't read the codespace ledger, so each cloud build gets a fixed share:
-- `stargate build --assistant-cloud` reserves **2 attempts per cloud provider** (one question plus its one retry) and their largest possible cost in the ledger, under that build's ID, before it builds. If the ledger can't cover it, the build stops with exit 6 before any build step.
+- `stargate build --assistant-cloud` reserves **2 attempts per cloud provider** (one question plus its one retry) and their largest possible cost in the ledger, under that build's ID, before it builds. The cost is worked out for the **most expensive** priced model allowed for that provider.
+- The build also writes into the APK the list of model IDs the phone may use: only the priced models in the ledger. In Meta mode the user may still type a model ID, but the app refuses any ID not on that list before sending, so changing the model can't cost more than was reserved. If the ledger can't cover it, the build stops with exit 6 before any build step.
 - The build writes that share into the APK, and the app refuses calls once it's used. The app's own counter only stops it going over that share; it's never the main record.
 - Each cloud build is used for **one** Mac proof run. A rerun needs a new build, which reserves a new share. The owner writes each phone call (time, provider, model, status) into the ledger after the run.
 - So the total can't pass the limits even if an AVD is wiped: the share was already spent in the ledger when the build was made.
@@ -108,7 +116,11 @@ The first Baseten attempt is the compatibility probe: it confirms the endpoint, 
   - a reservation survives a restart of the gate, and a second host reading the same ledger sees the attempts already used;
   - a timeout or a reply with no `usage` keeps the full reservation; a reply with `usage` records the real cost;
   - a cloud build reserves its share of 2 attempts per provider before building, and stops with 6 if the ledger can't cover it;
-  - the app refuses a third call on a build's share.
+  - the app refuses a third call on a build's share;
+  - a maximum-length question in multibyte text (for example 2,000 characters of emoji or Chinese, cut to the 8,000-byte limit) with a budget just short of its reservation is refused before sending; with the budget just enough, it's sent;
+  - a request body over 16 KB is refused before sending;
+  - on the phone, switching Meta mode to another priced model inside the build's share works, and switching to an unpriced or unlisted model ID is refused before sending;
+  - a fake reply whose `usage` is above the reservation stops all further calls for that provider.
 - The input, output and time caps apply.
 - Keystore failure: with a fake Keystore that fails on save, the key is not saved anywhere in plain text (the app's files, preferences and logs are searched for the dummy key), an error is shown, and pressing Ask in a cloud mode sends no request.
 - Privacy: switching to a cloud mode sends no earlier conversation.
