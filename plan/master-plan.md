@@ -84,6 +84,7 @@ Full spec: [milestones/M2-research-agent.md](milestones/M2-research-agent.md).
 **Demo:** `stargate research "<a real model name>"` shows live search steps and a cited report.
 
 ### M3: Strategy and fit engines
+Full spec: [milestones/M3-strategy-fit.md](milestones/M3-strategy-fit.md).
 It ranks how to build the OS for that phone: community tree build / generic system image / stock firmware rebuild / Linux / on-top-of-Android fallback, with reasons, risks and signing implications. The fit engine checks memory, storage, kernel features and AI model size. Over-budget selections are blocked.
 **Demo:** two simulated phones give different ranked plans, and an impossible selection is refused with a reason.
 
@@ -152,3 +153,6 @@ Only by your decision, recorded here with the date and reason.
 | 30 Oct 2026 | **Product principle:** StarGate is free to use, and the only key a user needs is their own **Meta API key**. Baseten (`muse-spark-open-1026`) is used only during development, never in the product people run | Your direction: it benefits both Meta and the user, with one key for an intelligent platform that builds their whole system |
 | 31 Oct 2026 | **M4 spike runs alongside M2**, in a separate worktree, to answer Q7, Q8 and the toolchain question by Sun 1 Nov | M4 is the core of the demo and the riskiest step. Finding a blocker on Monday would leave no time to change path |
 | 31 Oct 2026 | **Q11: the emulator runs on your Mac** (Apple M5, 16 GB), using arm64 images, after one approved install | Your answer. The codespace has no hardware virtualization |
+| 31 Oct 2026 | **M3 spec drafted while M1 and the M4 spike run.** Bootloader lock is inferred from the verified-boot state (rule R-LOCK-FROM-VBS), because M1 found no official source for the property it read | Keeps Muse busy without waiting on reviews. M3 needs the lock state for strategy decisions |
+| 1 Nov 2026 | **M3 spec v2 after ChatGPT's review.** Strategies that pass the rules are called `candidate`, not "possible", and list what's still unchecked. Unlock has one state from an ordered table. Model choice keeps unknowns as `unconfirmed`, and refuses only when every model definitely fails. Research must match the profile's phone. `plan-v1` carries an exact handoff for M4. A refusal's exit code (7) wins over an explanation failure. Bounded documentation reads are allowed while writing the docs | ChatGPT found the v1 rules could claim more than the facts prove. These changes keep every conclusion honest and give M4 one exact input |
+| 1 Nov 2026 | **M3 spec v2.1: the M4 handoff carries the decision.** It includes the selection result, refusal reasons, input provenance and `build_allowed` (`emulator_only` or `none`). M4 must validate the whole plan and builds only when it's allowed | ChatGPT's re-review: a refused plan could otherwise look the same as an accepted one to M4 |
