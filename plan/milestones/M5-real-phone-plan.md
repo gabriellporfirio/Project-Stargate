@@ -75,11 +75,11 @@ stargate install-plan --sim flagship --plan plan.json [--record trace.json | --r
 
 **Budget:** at most 3 Meta calls per run (the draft, one repair, one network retry), `max_completion_tokens` 2048 each, input capped at 24,000 characters of page text, 2 page fetches, 60 s per run.
 
-## 6. Which Meta model makes the decision (open, owner's call)
-- **Recommended: `muse-spark-1.3` on the Meta API.** It's the same key and route as M2 and M3, whether it returns reliable JSON is recorded in M2's spike notes (`docs/m2-spike.md`, Q14; still marked open in the master plan, so Muse reads the spike result first, and if JSON isn't reliable, code parses and validates plain text against the same schema), and it counts for Meta tooling. Spend comes from the existing Meta allowance.
-- Alternative: Muse Spark Open on Baseten. It counts for the open-weight bonus, but the Assistant's cloud mode (M4c) already shows Spark Open on camera, and the Baseten budget is small (M4c: 5 attempts, $5 recorded).
+## 6. Which Meta model makes the decision (owner chose `muse-spark-1.3`, 1 Nov)
+- **Chosen: `muse-spark-1.3` on the Meta API** (owner, 1 Nov 19:50). It's the same key and route as M2 and M3, whether it returns reliable JSON is recorded in M2's spike notes (`docs/m2-spike.md`, Q14; still marked open in the master plan, so Muse reads the spike result first, and if JSON isn't reliable, code parses and validates plain text against the same schema), and it counts for Meta tooling. Spend comes from the existing Meta allowance.
+- Not chosen: Muse Spark Open on Baseten. It counts for the open-weight bonus, but the Assistant's cloud mode (M4c) already shows Spark Open on camera, and the Baseten budget is small (M4c: 5 attempts, $5 recorded).
 
-Until the owner picks, Muse builds with a provider interface and tests with a fake model. Only the chosen model gets a live run.
+Muse builds behind a provider interface and tests with a fake model. Only `muse-spark-1.3` gets a live run.
 
 ## 7. Tests (offline, with a fake model)
 - Each rule in section 3 passes and fails on purpose, including: a bootloader-mode `flash system` on a dynamic-partition phone (rejected); a quote changed by one word (rejected); an unknown step type (rejected); unlock not supported (only `do_not_install` accepted); dynamic partitions unknown (needs `check_is_logical`, result `unconfirmed`).
@@ -92,7 +92,6 @@ Until the owner picks, Muse builds with a provider interface and tests with a fa
 ## Done when
 - `stargate install-plan --sim flagship` and `--sim old32` produce different, accepted, cited plans from a live run (or a replay of one), shown in the readable view.
 - All rules and tests in sections 3 and 7 pass, and the full existing suite still passes.
-- The owner has picked the model in section 6.
 
 ## Out of scope (hackathon cut line)
 The rest of the original M5 (base source, kernel, partition sizes and signing steps for a real build) stays a plan for later. No real-phone build or install runs, and no Linux build machine is used (Q6). Running these steps on a phone is M7, and only with the owner's explicit approval.
