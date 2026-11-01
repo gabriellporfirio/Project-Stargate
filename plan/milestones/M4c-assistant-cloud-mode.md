@@ -1,6 +1,6 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v2.2, 1 Nov 2026. v2.2 makes the cost reservation a true upper bound ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+Status: v2.3, 1 Nov 2026. v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
 
 **Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
@@ -83,20 +83,26 @@ The limits must hold across the codespace, every emulator and every rerun, inclu
 
 **Reserve before sending.** Before anything leaves the codespace or the phone, the gate:
 1. reads the ledger and refuses if the attempt limit or the dollar limit would be passed, or the model has no price;
-2. reserves one attempt and the **largest possible cost** of that request, worked out as below;
+2. reserves one attempt and the **estimated largest cost** of that request, worked out as below;
 3. saves the reservation to the ledger, and only then sends.
 
-**How the largest possible cost is worked out.** Character counts don't tell you token counts: the same text can make different numbers of tokens on different models, and non-English text often makes more (Meta's [token counting](https://dev.meta.ai/docs/token-counting) page). So the reservation doesn't guess from characters. For each allowed model, the ledger holds a **pinned input-token ceiling** for the complete billable request (the question, the chat template and anything the provider adds), with its source:
-- by default, the ceiling is **16,384 input tokens**: two tokens for every byte of the 16 KB request-body cap. Byte-based tokenizers, like the Llama family's, never make more than one token per byte. For Muse models that's an assumption, because their tokenizers aren't published, so the ceiling doubles it to cover the provider's own template too, and the stop rule below catches it if it's still wrong;
+**How the estimated largest cost is worked out.** Character counts don't tell you token counts: the same text can make different numbers of tokens on different models, and non-English text often makes more (Meta's [token counting](https://dev.meta.ai/docs/token-counting) page). So the reservation doesn't guess from characters. For each allowed model, the ledger holds a **pinned input-token ceiling** for the complete billable request (the question, the chat template and anything the provider adds), with its source:
+- by default, the ceiling is **32,768 input tokens**: two tokens for every byte of the 16 KB (16,384-byte) request-body cap. Byte-based tokenizers, like the Llama family's, never make more than one token per byte. For Muse models that's an assumption, because their tokenizers aren't published, so the ceiling doubles it to cover the provider's own template too;
 - the ceiling may be lowered only with a cited source for that model's tokenizer, recorded in the ledger;
 - the reserved cost is that ceiling × the pinned input price, plus 4,096 output tokens × the pinned output price.
 
-**If the bound is ever wrong.** If a reply's `usage` shows more input or output tokens than were reserved, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner then decides whether to change the ceiling through this plan.
+**This is a conservative estimate, not a guarantee.** No provider publishes a billable-input limit for these models that M4c can cite, so the reservation can't be proven to be the true maximum. The policy for M4c (a bounded demo) is:
+- the estimate above is reserved before every request, and nothing is sent unless it fits;
+- **one request may still cost more than its reservation** if the assumption is wrong. The gate can only find out from `usage` afterwards. So the dollar limits can be passed by at most that one request per provider;
+- when that happens, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner decides whether to change the ceiling through this plan;
+- the dollar limits ($5 and $2) stay far below the hackathon credit, so a single overshoot can't use up the account.
+
+If a provider later publishes an enforced input limit for a model, the ceiling for that model is set from it, with the source in the ledger.
 
 A retry is a new attempt and goes through the same three steps. After the reply, the reservation is replaced with the real cost from `usage`. If the call timed out, failed or came back without `usage`, the full reservation is kept. Nothing ever gives an attempt back, and a restart, a new host or a wiped AVD never restores any allowance.
 
 **The phone's share.** The phone can't read the codespace ledger, so each cloud build gets a fixed share:
-- `stargate build --assistant-cloud` reserves **2 attempts per cloud provider** (one question plus its one retry) and their largest possible cost in the ledger, under that build's ID, before it builds. The cost is worked out for the **most expensive** priced model allowed for that provider.
+- `stargate build --assistant-cloud` reserves **2 attempts per cloud provider** (one question plus its one retry) and their estimated largest cost in the ledger, under that build's ID, before it builds. The cost is worked out for the **most expensive** priced model allowed for that provider.
 - The build also writes into the APK the list of model IDs the phone may use: only the priced models in the ledger. In Meta mode the user may still type a model ID, but the app refuses any ID not on that list before sending, so changing the model can't cost more than was reserved. If the ledger can't cover it, the build stops with exit 6 before any build step.
 - The build writes that share into the APK, and the app refuses calls once it's used. The app's own counter only stops it going over that share; it's never the main record.
 - Each cloud build is used for **one** Mac proof run. A rerun needs a new build, which reserves a new share. The owner writes each phone call (time, provider, model, status) into the ledger after the run.
@@ -111,7 +117,7 @@ The first Baseten attempt is the compatibility probe: it confirms the endpoint, 
 - Errors: each row of the section 3 table with a fake server, including truncation, empty and malformed replies. No substitution, and no response body shown.
 - Ledger and budget, each refused **before** the fake network layer sees a request:
   - the sixth attempt for a provider; a retry counts as an attempt;
-  - a call whose largest possible cost would pass the dollar limit or the owner's recorded credit;
+  - a call whose estimated largest cost would pass the dollar limit or the owner's recorded credit;
   - a model ID with no pinned price;
   - a reservation survives a restart of the gate, and a second host reading the same ledger sees the attempts already used;
   - a timeout or a reply with no `usage` keeps the full reservation; a reply with `usage` records the real cost;
