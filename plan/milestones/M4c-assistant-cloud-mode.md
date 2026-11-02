@@ -18,6 +18,8 @@ Status: v2.5, 2 Nov 2026. v2.5 follows the owner's decision that users bring the
 
 The Assistant's settings have one **Model** drop-down with these three entries. The user picks a provider from the list and never types a web address. A custom provider is a later idea, out of scope here. The screen always shows which mode and model answered.
 
+**How the modes are explained (owner, 2 Nov).** Local mode is described as the model the platform picked to fit this phone. Next to each cloud mode, and on the key screen, the app says in plain words: "Uses your own API key. The terms and usage limits of the provider that issued it apply." The provider is named (Meta or Baseten) with a link to its terms page; the link is fixed in the app, and the app never reads or shows prices.
+
 ## 2. Keys (Q16 answered)
 [Meta's model catalog](https://dev.meta.ai/docs/models) says Muse Spark Open isn't served through the Meta Model API (cited in ChatGPT's review, 1 Nov). So:
 - StarGate **needs** only the user's Meta key. Local and Meta modes work with nothing else.
