@@ -20,10 +20,12 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 - **No merges.** Neither merges M5, M4c or each other in this part. M5's work is not inside them, and nothing they do changes M5.
 - **Separate folders.** Each has its own worktree, branch and tools folder. Every other worktree and tools folder is read-only to them. Nothing touches the frozen build outputs the Mac test is downloading.
 - **No shared ports or devices.** They never use the transfer port 8765 or 8080 in the codespace, and tests use any free port. They never run an emulator or adb in the codespace.
-- **Shared resources are guarded.**
-  - Android builds take the shared build lock and hold it only while building.
-  - Each build first checks for at least 8 GB free and stops if not (the codespace had 15 GB free on 2 Nov; one image build uses about 2.5 GB).
-  - The second Muse makes no Android builds now.
+- **Shared resources are bounded, and the Now track has priority.** Separate folders don't share files, but the Muses still share one machine's CPU, memory and disk, so:
+  - **Limits from M4:** at most one Android or Gradle build at a time across all Muses, with at most 2 Gradle workers and 2 GB of heap. Builds and full test suites run under `nice -n 10`.
+  - **Disk:** a Muse takes the build lock **first**, then measures free space. It estimates the build's full peak: scratch and unpacked copies, the image, payload copies and the gzip. It goes ahead only if free space is at least that peak plus M4's 5 GB reserve, and it records the measured peak afterwards. (The earlier flat "8 GB" estimate is withdrawn.)
+  - **Quiet windows:** the owner creates `/workspaces/.now-track-busy` before any Now-track live run, BYOK build or urgent fix, and deletes it after. While it exists, Ahead Muses start no image build and no full suite. They wait, recheck every 5 minutes, and never hold the lock while waiting.
+  - **Output paths:** before any suite or build, each Ahead Muse checks that inherited scripts write only under its own worktree or tools folder.
+  - **Planning repo:** the owner fetches it once before starting both Muses. The Muses read the pinned commit and never fetch, so no two processes write to that shared repo at once.
 - **No live calls.** The Ahead track makes no network or Meta calls.
 - **The builder isn't used.** It stays free for Mac-test fixes. That's why the platform gets a new Muse instead of the builder.
 
@@ -33,3 +35,11 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 3. Known overlap to resolve at that merge:
    - Phone A changes the M4 build (Link in every build, Files without a socket).
    - The platform's Build step must then use the merged build code, and the M4 Mac steps change from "Files listens on 8080" to "Link listens on 8080".
+
+## Owner steps this adds
+- Once, before starting both Ahead Muses: `git -C /workspaces/Project-Stargate fetch origin`
+- Before a Now-track live run, BYOK build or urgent fix: `touch /workspaces/.now-track-busy`
+- After it: `rm /workspaces/.now-track-busy`
+
+## What these partial stages don't prove
+Platform Part 1 and phone Part A are partial stages. Approving them doesn't complete M6 §7's combined Files + Assistant Mac proof. Runtime claims are marked pending until the owner runs the Mac steps: which of our apps listen, and the positive and negative binding results.
