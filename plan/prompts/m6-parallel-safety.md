@@ -23,7 +23,15 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 - **Shared resources are bounded, and the Now track has priority.** Separate folders don't share files, but the Muses still share one machine's CPU, memory and disk, so:
   - **Limits from M4:** at most one Android or Gradle build at a time across all Muses, with at most 2 Gradle workers and 2 GB of heap. Builds and full test suites run under `nice -n 10`.
   - **Disk:** a Muse takes the build lock **first**, then measures free space. It estimates the build's full peak: scratch and unpacked copies, the image, payload copies and the gzip. It goes ahead only if free space is at least that peak plus M4's 5 GB reserve, and it records the measured peak afterwards. (The earlier flat "8 GB" estimate is withdrawn.)
-  - **Quiet windows:** the owner creates `/workspaces/.now-track-busy` before any Now-track live run, BYOK build or urgent fix, and deletes it after. While it exists, Ahead Muses start no image build and no full suite. They wait, recheck every 5 minutes, and never hold the lock while waiting.
+  - **Quiet windows (a handshake):** every heavy step an Ahead Muse runs goes through its helper `ahead-heavy.sh`. Heavy means any Android/Gradle build including standalone APKs, image builds, compression, and full test suites. The helper:
+    1. refuses to start while `/workspaces/.now-track-busy` exists;
+    2. takes the build lock;
+    3. writes a marker `/workspaces/.ahead-heavy-<name>` with its PID;
+    4. checks the flag **again** and backs out if it appeared;
+    5. runs the step;
+    6. always removes the marker.
+
+    A step already running finishes, because nothing is killed mid-write. The owner sets the flag first, then waits until no marker is left before starting the Now task. Because the marker is written before the second check, a Muse that was waiting for the lock can't slip in after the owner's check.
   - **Output paths:** before any suite or build, each Ahead Muse checks that inherited scripts write only under its own worktree or tools folder.
   - **Planning repo:** the owner fetches it once before starting both Muses. The Muses read the pinned commit and never fetch, so no two processes write to that shared repo at once.
 - **No live calls.** The Ahead track makes no network or Meta calls.
@@ -38,8 +46,13 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 
 ## Owner steps this adds
 - Once, before starting both Ahead Muses: `git -C /workspaces/Project-Stargate fetch origin`
-- Before a Now-track live run, BYOK build or urgent fix: `touch /workspaces/.now-track-busy`
-- After it: `rm /workspaces/.now-track-busy`
+- **Before** a Now-track live run, BYOK build or urgent fix, run these two commands. The second one waits until both Ahead Muses have finished any heavy step in progress, and clears markers left by a process that has died:
+  ```
+  touch /workspaces/.now-track-busy
+  while ls /workspaces/.ahead-heavy-* >/dev/null 2>&1; do for f in /workspaces/.ahead-heavy-*; do p=$(head -1 "$f"); ps -p "$p" >/dev/null 2>&1 || rm -f "$f"; done; ls /workspaces/.ahead-heavy-* >/dev/null 2>&1 && { echo "Waiting for an Ahead Muse to finish its current step"; sleep 30; }; done; echo "CLEAR: start the Now task"
+  ```
+- Start the Now task only after `CLEAR` prints.
+- **After** it finishes: `rm /workspaces/.now-track-busy`, and the Ahead Muses resume on their next 5-minute check.
 
 ## What these partial stages don't prove
 Platform Part 1 and phone Part A are partial stages. Approving them doesn't complete M6 §7's combined Files + Assistant Mac proof. Runtime claims are marked pending until the owner runs the Mac steps: which of our apps listen, and the positive and negative binding results.
