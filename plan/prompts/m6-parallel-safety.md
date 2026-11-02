@@ -22,7 +22,7 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 - **No shared ports or devices.** They never use the transfer port 8765 or 8080 in the codespace, and tests use any free port. They never run an emulator or adb in the codespace.
 - **Shared resources are guarded.**
   - Android builds take the shared build lock and hold it only while building.
-  - Each build first checks for at least 15 GB free and stops if not.
+  - Each build first checks for at least 8 GB free and stops if not (the codespace had 15 GB free on 2 Nov; one image build uses about 2.5 GB).
   - The second Muse makes no Android builds now.
 - **No live calls.** The Ahead track makes no network or Meta calls.
 - **The builder isn't used.** It stays free for Mac-test fixes. That's why the platform gets a new Muse instead of the builder.
