@@ -1,6 +1,6 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v2.5, 2 Nov 2026. v2.5 follows the owner's decision that users bring their own key and the app never tracks money: prices, dollar limits and cost reservations are removed, and the per-request caps and a small attempt log for our own development stay (section 6). v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and reserved costs) from what providers actually charge ([ChatGPT's re-review of v2.3](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.3.md)). v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+Status: v2.5, 2 Nov 2026 (revised after GPT's review the same day: an owner-run preflight for the development attempt limit, clearer retry rules, test fixes). v2.5 follows the owner's decision that users bring their own key and the app never tracks money: prices, dollar limits and cost reservations are removed, and the per-request caps and a small attempt log for our own development stay (section 6). v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and reserved costs) from what providers actually charge ([ChatGPT's re-review of v2.3](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.3.md)). v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
 
 **Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
@@ -83,9 +83,18 @@ Build contract:
 - **One at a time:** a second question while one is running is refused. There's at most **one** retry per question, only for the retryable errors in section 3, and never a loop.
 - **Model IDs:** the open-weight mode always sends exactly `meta-models/muse-spark-open-1026`. Meta mode sends `muse-spark-1.3` unless the user typed another Meta model ID (section 1); a typed ID must be non-empty, at most 100 characters, and use only letters, digits, `.`, `-`, `_` and `/`, or it's refused before sending. Whether that model is available, and what it costs, is up to the user's own Meta plan.
 
-**Development and demo attempts (codespace, not the product).** While we build and record, live calls use the owner's keys, so the codespace keeps a small **attempt log**, `docs/m4c-calls.md` (time, provider, model, HTTP status, token counts from `usage`; never a key, question or answer). It allows at most **5 attempts per provider** across all of M4c's development and the Mac proof, retries included, written down **before** each attempt is sent. The owner writes the Mac proof's phone calls into the same log afterwards. No prices or dollar amounts are recorded.
+**Development and demo attempts (an owner-run procedure, not a product limit).** While we build and record, live calls use the owner's keys. The product itself has no attempt allowance; this procedure only protects our own development budget.
+- **The log.** `docs/m4c-calls.md` in the product repo holds one row per send: time, provider, model, where it ran (codespace or phone), HTTP status, token counts from `usage`, and its state. It never holds a key, question, answer or money amount. It's committed, so totals survive restarts, new hosts and fixups.
+- **The limit:** at most **5 sends per provider** across all of M4c's development and the Mac proof, retries included.
+- **States:** `planned` (written before a send is allowed), `sent` (a reply or HTTP status came back), `uncertain` (a timeout, a dropped connection, or anything where the request may have reached the provider). `planned` and `uncertain` both count as used until the owner reconciles them, and an `uncertain` row is never given back.
+- **In the codespace,** code writes the `planned` row before sending and refuses any send that would make the total pass 5.
+- **Before the phone proof (preflight):** the owner stops all other development calls, counts the rows for each provider, and writes **two** `planned` rows per cloud mode to be tested (the question plus its one possible retry). If that would pass 5, that mode isn't tested and the record says so. After the run, the owner turns each planned row into `sent` or `uncertain` from the app's screen and its metadata log, and deletes a planned row only if the app's log shows that send never happened. No more live work starts until this is reconciled.
+- So with four sends already used, the phone proof for that provider can't start: one question and its retry need two.
 
-**The provider's own limits apply.** If the provider refuses a call for quota or billing reasons, the app shows that error (section 3) and doesn't retry.
+**The provider's own limits apply.** A hard refusal (401 or 403 key rejected, 402 or a billing or quota-exhausted error) is shown and never retried. A transient 429 follows section 3: at most one retry, only after the provider's wait time, and none if it asks for more than 10 seconds. Across every layer (the app and its HTTP client), a question makes at most **two** sends, and the 60-second limit includes any wait and the retry.
+
+
+**Moving the v2.4 code over (follow-up fixup).** One fixup on `m4c-cloud` updates everything together: the app's Java code, the codespace Python code, the old ledger and phone-share tests, `docs/m4c-integration.md` and the Mac proof steps. It builds the cloud APK into a new folder, with fresh hashes and an updated Assistant manifest entry. The builder's approved local APK (`1936549b…`) is left untouched. Approving this spec proves nothing live.
 
 The first Baseten attempt is the compatibility probe: it confirms the endpoint, the model ID and the response shape in one call.
 
@@ -95,13 +104,14 @@ The first Baseten attempt is the compatibility probe: it confirms the endpoint, 
 - Credential routing: with two dummy keys, each request carries only its own provider's key and goes only to its own host. Redirects are refused.
 - Errors: each row of the section 3 table with a fake server, including truncation, empty and malformed replies. No substitution, and no response body shown.
 - Limits, each refused **before** the fake network layer sees a request:
-  - a maximum-length question in multibyte text (for example 2,000 characters of emoji or Chinese) over 8,000 bytes;
+  - question length, where a "character" is one Unicode code point: 2,000 four-byte characters (exactly 8,000 UTF-8 bytes) are accepted; 2,001 characters are refused; a question of 8,001 bytes is refused;
   - a request body over 16 KB;
   - a typed Meta model ID that's empty, too long or has other characters; any open-weight ID other than the fixed one;
   - a second question while one is running;
   - a second retry for the same question (only one is ever made).
-- The codespace attempt log: the sixth attempt for a provider is refused; a retry counts as an attempt; the attempt is written before sending and survives a restart; the log never holds a key, question or answer.
-- No price, dollar amount or cost reservation exists anywhere in the code, the APK or the docs (a scan for the old ledger fields and "price").
+- The development log: the sixth send for a provider is refused in the codespace; a retry counts; the `planned` row is written before sending and survives a restart; a timeout leaves an `uncertain` row that still counts; with four sends already used, the preflight refuses the phone proof for that provider; the log never holds a key, question, answer or money amount.
+- Retries: a 402 or quota error is never retried; a 429 is retried at most once and not at all when the wait is over 10 s; a question never makes more than two sends across the app and HTTP-client layers; the 60-second limit includes the wait.
+- **Removal check:** no active pricing field, cost calculation, cost or share gate, or per-build allowance remains in the app, the codespace code, the APK or the ledger files (a scan for the old v2.4 field and function names). Documentation that describes the removal, and negative tests that check it, are allowed and listed in the scan's exceptions.
 - The input, output and time caps apply.
 - Keystore failure: with a fake Keystore that fails on save, the key is not saved anywhere in plain text (the app's files, preferences and logs are searched for the dummy key), an error is shown, and pressing Ask in a cloud mode sends no request.
 - Privacy: switching to a cloud mode sends no earlier conversation.
@@ -116,6 +126,7 @@ For one Files + Assistant build with `--assistant-cloud`, using M4's transfer ha
 - **Local mode** answers with networking off.
 - **Meta mode** answers one question.
 - **Meta open-weight mode** answers one question through `meta-models/muse-spark-open-1026`, with the model ID shown.
+- **Before** any live question: the section 6 preflight (other development calls stopped, two `planned` rows per cloud mode tested). **After:** the planned rows reconciled to `sent` or `uncertain`.
 - A screenshot of each answer, with no key visible. Each live answer counts against section 6.
 
 ## 9. Results
