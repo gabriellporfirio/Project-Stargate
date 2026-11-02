@@ -45,7 +45,7 @@ The model returns JSON (`install-draft-v1`). It holds an ordered list of steps, 
 
 **Closed partition list:** `system` only. StarGate's image replaces the system partition, and nothing else is flashed in M5. Any other partition name rejects the draft.
 
-Each step has a short plain-English reason, plus a **citation**: a fetch record ID, an **exact, non-empty quote** from that page, and the ID of the rule it relies on (section 3). Each change from the starting steps (removed, added or changed) has its own reason and citation. The model may also return `do_not_install`, with a reason and citation.
+Each step has a short plain-English reason, plus a **citation**: the ID of the rule it relies on (section 3), and, when that rule is a source rule, a fetch record ID and an **exact, non-empty quote** from that page. A step resting only on a policy rule cites the rule ID alone. Each change from the starting steps (removed, added or changed) has its own reason and citation. The model may also return `do_not_install`, with a reason and citation.
 
 The model cannot write free-text commands, change a fact, change M3's selection or `build_allowed`, or edit an image. Its output is stored as **model notes** (M2 3c) until code accepts it.
 
@@ -93,7 +93,7 @@ So "flash, then unlock" fails: flashing needs the unlocked state, which only `un
 
 ## 4. Output: `install-plan-v1`
 - `subject`, `inputs` (profile, plan, starting steps and pages, each with SHA-256 and provenance), `fetch_records`, `facts_used` (ID, value, status), `drafts` (each draft, with its rule results), `accepted_steps` or `null`, `result` (`accepted`, `unconfirmed`, `do_not_install` or `no_valid_plan`), `unresolved` (the list in section 3), `runs: "never"`, `provenance` (`live`, `replay` or `synthetic`), and `model` (ID and provider).
-- A readable view shows: "Install-routing proposal: not a validated install procedure"; the phone (with the SIMULATED label when it applies); the starting steps with the model's edits (crossed out, added); each edit's quote and a link to the page; each rule's result; and "Install plan only: not run on any phone. The demo boots this image in the Android Emulator."
+- A readable view shows: "Install-routing proposal: not a validated install procedure"; the phone (with the SIMULATED label when it applies); the starting steps with the model's edits (crossed out, added); each edit's quote and a link to the page; each rule's result; a visible "conditional" label on every conditional step and an "unconfirmed" label on the result when it applies; and "Install plan only: not run on any phone. The demo boots this image in the Android Emulator."
 
 ## 5. CLI
 ```
