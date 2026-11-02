@@ -1,6 +1,6 @@
 # M4c: Assistant cloud mode (spec)
 
-Status: v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and reserved costs) from what providers actually charge ([ChatGPT's re-review of v2.3](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.3.md)). v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
+Status: v2.5, 2 Nov 2026 (revised after GPT's review the same day: an owner-run preflight for the development attempt limit, clearer retry rules, test fixes). v2.5 follows the owner's decision that users bring their own key and the app never tracks money: prices, dollar limits and cost reservations are removed, and the per-request caps and a small attempt log for our own development stay (section 6). v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and reserved costs) from what providers actually charge ([ChatGPT's re-review of v2.3](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.3.md)). v2.2 replaced the characters-equal-tokens guess with byte caps and a token ceiling ([ChatGPT's re-review of v2.1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.1.md)). v2.3 fixes that ceiling's arithmetic and says plainly that it's a conservative estimate, not a guarantee ([ChatGPT's re-review of v2.2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.2.md)). v2 folded in [ChatGPT's review of v1](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode.md) (four must-fix, one should-fix). v2.1 folds in [ChatGPT's re-review of v2](../../reviews/2026-11-01-chatgpt-m4c-assistant-cloud-mode-v2.md): one shared budget ledger with reserve-before-send (section 6), a Keystore-failure test and a real per-package backup check (sections 7 and 8). It follows the owner's direction on 1 Nov: the phone is limited by its hardware, so the Assistant offers a small local model **and** cloud models, the way a model picker lists several providers.
 
 **Time-box:** at most **4 hours** of Muse work, started only after M4's local Assistant answers in the emulator. M4c never holds up M4, M5, M6 or the recorded core demo. If it runs out of time, it's reported as partial or blocked (section 9).
 
@@ -17,6 +17,12 @@ Status: v2.4, 1 Nov 2026. v2.4 separates what the ledger limits (recorded and re
 | **Meta open-weight** | exactly `meta-models/muse-spark-open-1026`, fixed | Baseten (partner inference) | the user's Baseten key |
 
 The Assistant's settings have one **Model** drop-down with these three entries. The user picks a provider from the list and never types a web address. A custom provider is a later idea, out of scope here. The screen always shows which mode and model answered.
+
+**How the modes are explained (owner, 2 Nov).** Short, fixed text in the app:
+- **On this phone:** "Picked to fit your phone. Works offline."
+- **Meta cloud** and **Meta open-weight:** "Uses your own API key. Your provider's terms and usage limits apply." followed by the provider's name (Meta or Baseten) linked to its terms page. The same line appears on the screen where the key is entered.
+
+The links are fixed in the app. The app never reads or shows prices.
 
 ## 2. Keys (Q16 answered)
 [Meta's model catalog](https://dev.meta.ai/docs/models) says Muse Spark Open isn't served through the Meta Model API (cited in ChatGPT's review, 1 Nov). So:
@@ -67,47 +73,28 @@ Build contract:
 - **Logs** hold metadata only: provider, model, HTTP status, time taken and token counts. Never the key, headers, the question or the answer.
 - **Local history stays local.** A cloud mode sends only the current question, never earlier local conversation. Switching modes doesn't upload anything.
 
-## 6. Limits and the budget ledger
-The limits must hold across the codespace, every emulator and every rerun, including a wiped AVD. So there is **one ledger**, and the app on the phone never decides its own allowance.
+## 6. Limits (v2.5: the user's own key, no money tracking)
+**Owner's decision (2 Nov):** the user brings their own key, and their own provider plan decides what they can use and what it costs. The app never tracks prices or money. So v2.5 removes the pinned prices, the dollar limits, the cost reservations and the "unpriced model refused" rule. What stays are plain limits that protect any key, including the owner's during the demo, from a bug that keeps calling.
 
-**The ledger.** `docs/m4c-ledger.json` in the product repo is the only source of truth. It holds, per provider: the attempt limit, the dollar limit, the remaining credit the owner recorded, the pinned prices, and one row per attempt or reservation. `docs/m4c-calls.md` is the readable copy, written from the ledger.
-
-**Limits:**
-- **Attempts:** at most **5 per provider** for all of M4c, counting every compatibility probe, retry, emulator demo and rerun.
-- **Dollars (ledger limit):** the ledger's recorded costs plus its estimated reservations may total at most **$5** for Baseten and **$2** for Meta, and never more than the remaining credit the owner recorded (the smaller of the two applies). This limits what the ledger knows about, not what the provider actually bills: see "This is a conservative estimate" below. Before the first call to a provider, the owner reads the remaining balance on its billing page and records it in the ledger.
-- **Input:** one question, at most 2,000 characters **and** at most 8,000 bytes once encoded as UTF-8, no history. The whole request body sent to the provider is capped at **16 KB**; a bigger body is refused before sending.
+**Limits on every request (in the app and in the codespace):**
+- **Input:** one question, at most 2,000 characters **and** at most 8,000 bytes once encoded as UTF-8, no history. The whole request body is capped at **16 KB**; a bigger body is refused before sending.
 - **Output:** `max_completion_tokens` (Meta) and `max_tokens` (Baseten) at most **4096**, and a reply body over 256 KB is cut off and labelled.
-- **Time:** 60 seconds per request, including the one retry.
+- **Time:** 60 seconds per request, including its one retry.
+- **One at a time:** a second question while one is running is refused. There's at most **one** retry per question, only for the retryable errors in section 3, and never a loop.
+- **Model IDs:** the open-weight mode always sends exactly `meta-models/muse-spark-open-1026`. Meta mode sends `muse-spark-1.3` unless the user typed another Meta model ID (section 1); a typed ID must be non-empty, at most 100 characters, and use only letters, digits, `.`, `-`, `_` and `/`, or it's refused before sending. Whether that model is available, and what it costs, is up to the user's own Meta plan.
 
-**Prices are pinned.** Each allowed model ID has an input and output price in the ledger, copied from the provider's pricing page with the link and date. If a provider says the model is free for the hackathon, the price is recorded as 0 with that source. A model ID with no recorded price is refused. Prices are unknown today and are filled in before the first call.
+**Development and demo attempts (an owner-run procedure, not a product limit).** While we build and record, live calls use the owner's keys. The product itself has no attempt allowance; this procedure only protects our own development budget.
+- **The log.** `docs/m4c-calls.md` in the product repo holds one row per send: time, provider, model, where it ran (codespace or phone), HTTP status, token counts from `usage`, and its state. It never holds a key, question, answer or money amount. It's committed, so totals survive restarts, new hosts and fixups.
+- **The limit:** at most **5 sends per provider** across all of M4c's development and the Mac proof, retries included.
+- **States:** `planned` (written before a send is allowed), `sent` (a reply or HTTP status came back), `uncertain` (a timeout, a dropped connection, or anything where the request may have reached the provider). `planned` and `uncertain` both count as used until the owner reconciles them, and an `uncertain` row is never given back.
+- **In the codespace,** code writes the `planned` row before sending and refuses any send that would make the total pass 5.
+- **Before the phone proof (preflight):** the owner stops all other development calls, counts the rows for each provider, and writes **two** `planned` rows per cloud mode to be tested (the question plus its one possible retry). If that would pass 5, that mode isn't tested and the record says so. After the run, the owner turns each planned row into `sent` or `uncertain` from the app's screen and its metadata log, and deletes a planned row only if the app's log shows that send never happened. No more live work starts until this is reconciled.
+- So with four sends already used, the phone proof for that provider can't start: one question and its retry need two.
 
-**Reserve before sending.** Before anything leaves the codespace or the phone, the gate:
-1. reads the ledger and refuses if the attempt limit or the dollar limit would be passed, or the model has no price;
-2. reserves one attempt and the **estimated largest cost** of that request, worked out as below;
-3. saves the reservation to the ledger, and only then sends.
+**The provider's own limits apply.** A hard refusal (401 or 403 key rejected, 402 or a billing or quota-exhausted error) is shown and never retried. A transient 429 follows section 3: at most one retry, only after the provider's wait time, and none if it asks for more than 10 seconds. Across every layer (the app and its HTTP client), a question makes at most **two** sends, and the 60-second limit includes any wait and the retry.
 
-**How the estimated largest cost is worked out.** Character counts don't tell you token counts: the same text can make different numbers of tokens on different models, and non-English text often makes more (Meta's [token counting](https://dev.meta.ai/docs/token-counting) page). So the reservation doesn't guess from characters. For each allowed model, the ledger holds a **pinned input-token ceiling** for the complete billable request (the question, the chat template and anything the provider adds), with its source:
-- by default, the ceiling is **32,768 input tokens**: two tokens for every byte of the 16 KB (16,384-byte) request-body cap. Byte-based tokenizers, like the Llama family's, never make more than one token per byte. For Muse models that's an assumption, because their tokenizers aren't published, so the ceiling doubles it to cover the provider's own template too;
-- the ceiling may be lowered only with a cited source for that model's tokenizer, recorded in the ledger;
-- the reserved cost is that ceiling × the pinned input price, plus 4,096 output tokens × the pinned output price.
 
-**This is a conservative estimate, not a guarantee.** No provider publishes a billable-input limit for these models that M4c can cite, so the reservation can't be proven to be the true maximum. The policy for M4c (a bounded demo) is:
-- the estimate above is reserved before every request, and nothing is sent unless it fits the ledger limit;
-- **actual charges can be higher than the ledger shows.** A request may cost more than its estimate. A request that times out or comes back without `usage` may still be billed, and the ledger then holds only its estimate. So M4c doesn't promise any maximum on actual spend beyond what the attempt limit implies;
-- what is firm: at most **5 attempts per provider**, each with capped input (16 KB body) and capped output (4,096 tokens);
-- when a reply's `usage` is above its reservation, the gate records the real cost, stops **all** further cloud calls for that provider, and the record names the model and the counts. The owner decides whether to change the ceiling through this plan;
-- after the last live call, the owner reads each provider's billing page again and records the actual spend next to the ledger total, so any gap is visible.
-
-If a provider later publishes an enforced input limit for a model, the ceiling for that model is set from it, with the source in the ledger.
-
-A retry is a new attempt and goes through the same three steps. After the reply, the reservation is replaced with the real cost from `usage`. If the call timed out, failed or came back without `usage`, the full reservation is kept. Nothing ever gives an attempt back, and a restart, a new host or a wiped AVD never restores any allowance.
-
-**The phone's share.** The phone can't read the codespace ledger, so each cloud build gets a fixed share:
-- `stargate build --assistant-cloud` reserves **2 attempts per cloud provider** (one question plus its one retry) and their estimated largest cost in the ledger, under that build's ID, before it builds. The cost is worked out for the **most expensive** priced model allowed for that provider.
-- The build also writes into the APK the list of model IDs the phone may use: only the priced models in the ledger. In Meta mode the user may still type a model ID, but the app refuses any ID not on that list before sending, so changing the model can't cost more than was reserved. If the ledger can't cover it, the build stops with exit 6 before any build step.
-- The build writes that share into the APK, and the app refuses calls once it's used. The app's own counter only stops it going over that share; it's never the main record.
-- Each cloud build is used for **one** Mac proof run. A rerun needs a new build, which reserves a new share. The owner writes each phone call (time, provider, model, status) into the ledger after the run.
-- So a wiped AVD can't add attempts or ledger allowance: the share was already reserved in the ledger when the build was made. (Actual charges can still differ from the ledger, as above.)
+**Moving the v2.4 code over (follow-up fixup).** One fixup on `m4c-cloud` updates everything together: the app's Java code, the codespace Python code, the old ledger and phone-share tests, `docs/m4c-integration.md` and the Mac proof steps. It builds the cloud APK into a new folder, with fresh hashes and an updated Assistant manifest entry. The builder's approved local APK (`1936549b…`) is left untouched. Approving this spec proves nothing live.
 
 The first Baseten attempt is the compatibility probe: it confirms the endpoint, the model ID and the response shape in one call.
 
@@ -116,18 +103,15 @@ The first Baseten attempt is the compatibility probe: it confirms the endpoint, 
 - Local mode in the cloud variant makes zero requests (fake network layer).
 - Credential routing: with two dummy keys, each request carries only its own provider's key and goes only to its own host. Redirects are refused.
 - Errors: each row of the section 3 table with a fake server, including truncation, empty and malformed replies. No substitution, and no response body shown.
-- Ledger and budget, each refused **before** the fake network layer sees a request:
-  - the sixth attempt for a provider; a retry counts as an attempt;
-  - a call whose estimated largest cost would pass the dollar limit or the owner's recorded credit;
-  - a model ID with no pinned price;
-  - a reservation survives a restart of the gate, and a second host reading the same ledger sees the attempts already used;
-  - a timeout or a reply with no `usage` keeps the full reservation; a reply with `usage` records the real cost;
-  - a cloud build reserves its share of 2 attempts per provider before building, and stops with 6 if the ledger can't cover it;
-  - the app refuses a third call on a build's share;
-  - a maximum-length question in multibyte text (for example 2,000 characters of emoji or Chinese, cut to the 8,000-byte limit) with a budget just short of its reservation is refused before sending; with the budget just enough, it's sent;
-  - a request body over 16 KB is refused before sending;
-  - on the phone, switching Meta mode to another priced model inside the build's share works, and switching to an unpriced or unlisted model ID is refused before sending;
-  - a fake reply whose `usage` is above the reservation stops all further calls for that provider.
+- Limits, each refused **before** the fake network layer sees a request:
+  - question length, where a "character" is one Unicode code point: 2,000 four-byte characters (exactly 8,000 UTF-8 bytes) are accepted; 2,001 characters are refused; a question of 8,001 bytes is refused;
+  - a request body over 16 KB;
+  - a typed Meta model ID that's empty, too long or has other characters; any open-weight ID other than the fixed one;
+  - a second question while one is running;
+  - a second retry for the same question (only one is ever made).
+- The development log: the sixth send for a provider is refused in the codespace; a retry counts; the `planned` row is written before sending and survives a restart; a timeout leaves an `uncertain` row that still counts; with four sends already used, the preflight refuses the phone proof for that provider; the log never holds a key, question, answer or money amount.
+- Retries: a 402 or quota error is never retried; a 429 is retried at most once and not at all when the wait is over 10 s; a question never makes more than two sends across the app and HTTP-client layers; the 60-second limit includes the wait.
+- **Removal check:** no active pricing field, cost calculation, cost or share gate, or per-build allowance remains in the app, the codespace code, the APK or the ledger files (a scan for the old v2.4 field and function names). Documentation that describes the removal, and negative tests that check it, are allowed and listed in the scan's exceptions.
 - The input, output and time caps apply.
 - Keystore failure: with a fake Keystore that fails on save, the key is not saved anywhere in plain text (the app's files, preferences and logs are searched for the dummy key), an error is shown, and pressing Ask in a cloud mode sends no request.
 - Privacy: switching to a cloud mode sends no earlier conversation.
@@ -142,6 +126,7 @@ For one Files + Assistant build with `--assistant-cloud`, using M4's transfer ha
 - **Local mode** answers with networking off.
 - **Meta mode** answers one question.
 - **Meta open-weight mode** answers one question through `meta-models/muse-spark-open-1026`, with the model ID shown.
+- **Before** any live question: the section 6 preflight (other development calls stopped, two `planned` rows per cloud mode tested). **After:** the planned rows reconciled to `sent` or `uncertain`.
 - A screenshot of each answer, with no key visible. Each live answer counts against section 6.
 
 ## 9. Results
@@ -154,7 +139,7 @@ Whatever the result, the core demo uses M4's build, and the video only shows mod
 - [ ] The owner approved the key wording in section 2 (by merging this PR).
 - [ ] Both APK variants build, and the cloud build passes M4's contents check with the variant recorded.
 - [ ] All section 7 tests pass offline, and the key scan is clean on every artifact.
-- [ ] The section 8 records exist; every live call is in `docs/m4c-calls.md` within the attempt limit and the ledger limit; and the owner's after-run billing readings are recorded beside the ledger total.
+- [ ] The section 8 records exist; every live call is in `docs/m4c-calls.md` within the attempt limit.
 - [ ] One checkpoint commit per part, reviewed by the reviewer Muse. Nothing pushed without the owner's OK.
 
 ## Out of scope
