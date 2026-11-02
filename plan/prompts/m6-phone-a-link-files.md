@@ -1,16 +1,26 @@
-# M6 phone side, Part A: Link, Files behind it, signing and the home screen (third Muse)
+# M6 phone side, Part A: Link, Files behind it, signing and the home screen (new Phone Muse, terminal 5)
 
 Spec: `plan/milestones/M6-app.md` v2.1, sections 2, 2a, 2b, 3, 5 and their tests in 6. Design reference: `design/m6-mockup/` (`computer-side-phone-page.html` and `phone-home.html`). Paste only after GPT approves.
 
 Part B (later): the Assistant behind Link. It changes the approved Assistant APK (a bound service, new signing), so it needs a new Assistant handoff, and it waits until the M4c bring-your-own-key fixup has landed.
 
-## Paste into the new third Muse (terminal 5)
+## Start the Phone Muse (codespace, new terminal 5)
 ```
-StarGate M6 phone side, Part A: Link, Files behind it, signing and the home screen. You are a new Muse. Spec and design: git -C /workspaces/Project-Stargate fetch origin, then read at the exact commit PLAN_SHA (git -C /workspaces/Project-Stargate show PLAN_SHA:<path>): plan/milestones/M6-app.md (v2.1; this part covers sections 2, 2a, 2b, 3 and 5, their tests in 6, and the Mac proof pattern in 7), plan/milestones/M4-image-build.md (v2.3; its build, checks and Mac-step patterns still apply), plan/master-plan.md section 7, and design/m6-mockup/ (README.md first). The spec wins where this prompt or the mockup differs. Record PLAN_SHA in the report.
+git -C /workspaces/m4a worktree add -b m6-phone /workspaces/m6-phone 5a9c7e6
+mkdir -p /workspaces/m6-phone-tools
+cd /workspaces/m6-phone
+muse --approval-mode on-request --approval-judge on
+```
+
+## Paste into the Phone Muse (terminal 5)
+```
+StarGate M6 phone side, Part A: Link, Files behind it, signing and the home screen. You are the Phone Muse, a new Muse. Spec and design: git -C /workspaces/Project-Stargate fetch origin, then read at the exact commit PLAN_SHA (git -C /workspaces/Project-Stargate show PLAN_SHA:<path>): plan/milestones/M6-app.md (v2.1; this part covers sections 2, 2a, 2b, 3 and 5, their tests in 6, and the Mac proof pattern in 7), plan/milestones/M4-image-build.md (v2.3; its build, checks and Mac-step patterns still apply), plan/master-plan.md section 7, and design/m6-mockup/ (README.md first). The spec wins where this prompt or the mockup differs. Record PLAN_SHA in the report.
 
 Rules: work only in /workspaces/m6-phone and /workspaces/m6-phone-tools; every other workspace folder is read-only, and /workspaces/m4a-tools/out/ and /workspaces/m4b-tools/out/ are frozen; never push; never --yolo; keys and signing secrets never printed or written into logs or the repo (report a keystore by path and certificate SHA-256 only); NO network and NO live calls; no downloads or installs without ONE "INSTALL APPROVAL REQUIRED" block and my OK; /usr/local/bin/python3; shared build lock (flock /workspaces/.android-build.lock ...) for every Android or image build; never weaken or skip a test. Out of scope here: the Assistant (Part B), Wi-Fi, updates, privileged reboot.
 
-Start: create the worktree /workspaces/m6-phone on a new branch m6-phone from m4a-build at 5a9c7e6 (check git log -1 shows it, the tree is clean and the full suite is green: 590 tests, 589 pass, 1 skip; stop and report if not). Another Muse works on the platform in /workspaces/m6 at the same time: stay out of stargate/app and the platform's files.
+Start: you are in /workspaces/m6-phone on branch m6-phone, created from 5a9c7e6 (check git log -1 shows it, the tree is clean and the full suite is green: 590 tests, 589 pass, 1 skip; stop and report if not). Another Muse works on the platform in /workspaces/m6 at the same time: stay out of stargate/app and the platform's files.
+
+Independence (owner rule: nothing run in advance may depend on, or disturb, the work running now): start from the fixed commit 5a9c7e6 only, never from a moving branch tip, and never merge or rebase onto m4a-build, m5-install-plan, m4c-byok or any other Muse's branch in this part. Never switch branches, commit, stash or write in any other worktree (/workspaces/m4a, /workspaces/m5, /workspaces/m4b, /workspaces/review, and the other M6 worktree). Never write, move or delete anything in /workspaces/m4a-tools, /workspaces/m5-tools, /workspaces/m4b-tools or /workspaces/m4b-downloads (read-only). Never start or stop the transfer server on port 8765 and never use ports 8765 or 8080 in the codespace (tests that open sockets use port 0, any free port). Never run an emulator or adb in the codespace. Before every image build, run df -h /workspaces and STOP if less than 15 GB is free. Hold the shared build lock only while building, never while waiting for me.
 
 Step 0: inventory (no changes). Find and write down in the report: where the launcher and Files app sources live, how they are built today, which key signs each (keystore path and certificate SHA-256 only), the ports and access-code code in Files, and how M4 build adds apps to an image. If building Link needs anything not already installed, STOP with one INSTALL APPROVAL REQUIRED block.
 

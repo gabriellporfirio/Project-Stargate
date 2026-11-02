@@ -1,16 +1,28 @@
-# M6 Part 1: the platform (builder Muse)
+# M6 Part 1: the platform (new Platform Muse, terminal 6)
 
 Spec: `plan/milestones/M6-app.md` v2.1, sections 1, 1a, 1b, 5 and 6 (platform tests only). Design reference: `design/m6-mockup/`. Paste only after GPT approves.
 
-Part 2 (later, builder): wire in M5 once its live run is done, plus the Boot and Done steps against Link. The second Muse builds Link, the bound services, signing and the launcher (sections 2, 2a, 2b, 3) after M5 and the M4c fixup.
+Part 2 (later, Platform Muse): wire in M5 once its live run is done, plus the Boot and Done steps against Link. The second Muse builds Link, the bound services, signing and the launcher (sections 2, 2a, 2b, 3) after M5 and the M4c fixup.
 
-## Paste into the builder Muse
+The builder Muse stays free for any fix the Files + Assistant Mac test needs, so this runs in a new Muse.
+
+## Start the Platform Muse (codespace, new terminal 6)
 ```
-StarGate M6, Part 1: the platform (the guided computer app). You are the builder Muse. Spec and design: git -C /workspaces/Project-Stargate fetch origin, then read at the exact commit PLAN_SHA (git -C /workspaces/Project-Stargate show PLAN_SHA:<path>): plan/milestones/M6-app.md (v2.1; this part covers sections 1, 1a, 1b, 5 and the platform tests in 6), plan/master-plan.md section 7, and design/m6-mockup/ (README.md first; the HTML files are a picture of the look, not code to copy). The spec wins where this prompt or the mockup differs. Record PLAN_SHA in the report.
+git -C /workspaces/m4a worktree add -b m6-platform /workspaces/m6 5a9c7e6
+mkdir -p /workspaces/m6-tools
+cd /workspaces/m6
+muse --approval-mode on-request --approval-judge on
+```
+
+## Paste into the Platform Muse
+```
+StarGate M6, Part 1: the platform (the guided computer app). You are the Platform Muse, a new Muse. Spec and design: git -C /workspaces/Project-Stargate fetch origin, then read at the exact commit PLAN_SHA (git -C /workspaces/Project-Stargate show PLAN_SHA:<path>): plan/milestones/M6-app.md (v2.1; this part covers sections 1, 1a, 1b, 5 and the platform tests in 6), plan/master-plan.md section 7, and design/m6-mockup/ (README.md first; the HTML files are a picture of the look, not code to copy). The spec wins where this prompt or the mockup differs. Record PLAN_SHA in the report.
 
 Rules (as before): never push; never --yolo; keys never read, printed or written (the server only passes the existing env var names to the existing M2 client); NO network and NO live Meta or Baseten calls in this part; no downloads or installs without ONE "INSTALL APPROVAL REQUIRED" block and my OK; /usr/local/bin/python3, standard library only for the server; no npm, no build tools, no outside fonts or CDNs; shared build lock (flock /workspaces/.android-build.lock ...) for any Android build; /workspaces/m4a-tools/out/ artifacts are read-only here; never weaken or skip a test.
 
-Start: create the worktree /workspaces/m6 on a new branch m6-platform from m4a-build at 5a9c7e6 (check git log -1 shows it, the tree is clean and the full suite is green there: 590 tests, 589 pass, 1 skip; stop and report if not). Do not merge the M5 branch in this part: it is still in progress.
+Start: you are in /workspaces/m6 on branch m6-platform, created from 5a9c7e6 (check git log -1 shows it, the tree is clean and the full suite is green there: 590 tests, 589 pass, 1 skip; stop and report if not). Do not merge the M5 branch in this part: it is still in progress. Work only in /workspaces/m6 and /workspaces/m6-tools.
+
+Independence (owner rule: nothing run in advance may depend on, or disturb, the work running now): start from the fixed commit 5a9c7e6 only, never from a moving branch tip, and never merge or rebase onto m4a-build, m5-install-plan, m4c-byok or any other Muse's branch in this part. Never switch branches, commit, stash or write in any other worktree (/workspaces/m4a, /workspaces/m5, /workspaces/m4b, /workspaces/review, and the other M6 worktree). Never write, move or delete anything in /workspaces/m4a-tools, /workspaces/m5-tools, /workspaces/m4b-tools or /workspaces/m4b-downloads (read-only). Never start or stop the transfer server on port 8765 and never use ports 8765 or 8080 in the codespace (tests that open sockets use port 0, any free port). Never run an emulator or adb in the codespace. Before every image build, run df -h /workspaces and STOP if less than 15 GB is free. Hold the shared build lock only while building, never while waiting for me.
 
 Step 1: the server and its browser rules (spec 1 and 1b).
 - `stargate app [--port 8770] [--forwarded-host <host>]`: a small server on 127.0.0.1 only (ThreadingHTTPServer), serving plain HTML, CSS and JavaScript files from the package. Never another address.
