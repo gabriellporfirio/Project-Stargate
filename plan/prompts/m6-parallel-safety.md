@@ -29,9 +29,9 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
     3. writes a marker `/workspaces/.ahead-heavy-<name>` with its PID;
     4. checks the flag **again** and backs out if it appeared;
     5. runs the step;
-    6. always removes the marker.
+    6. runs the step in its own process group, waits until every process in that group has ended, and only then removes the marker.
 
-    A step already running finishes, because nothing is killed mid-write. The owner sets the flag first, then waits until no marker is left before starting the Now task. Because the marker is written before the second check, a Muse that was waiting for the lock can't slip in after the owner's check.
+    A step already running finishes, because nothing is killed mid-write. If the helper is interrupted, or can't confirm that the whole group has finished, it leaves the marker in place and reports it. The owner sets the flag first, then waits until no marker is left before starting the Now task. Because the marker is written before the second check, a Muse that was waiting for the lock can't slip in after the owner's check. The owner's wait loop never deletes a marker by itself. A marker whose helper has stopped blocks CLEAR until the owner checks, by hand, that its job has finished.
   - **Output paths:** before any suite or build, each Ahead Muse checks that inherited scripts write only under its own worktree or tools folder.
   - **Planning repo:** the owner fetches it once before starting both Muses. The Muses read the pinned commit and never fetch, so no two processes write to that shared repo at once.
 - **No live calls.** The Ahead track makes no network or Meta calls.
@@ -46,10 +46,10 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 
 ## Owner steps this adds
 - Once, before starting both Ahead Muses: `git -C /workspaces/Project-Stargate fetch origin`
-- **Before** a Now-track live run, BYOK build or urgent fix, run these two commands. The second one waits until both Ahead Muses have finished any heavy step in progress, and clears markers left by a process that has died:
+- **Before** a Now-track live run, BYOK build or urgent fix, run these two commands. The second one waits until both Ahead Muses have finished any heavy step in progress. It never deletes anything itself. If it prints BLOCKED, follow its instruction: check the job really has ended, then delete that one marker by hand:
   ```
   touch /workspaces/.now-track-busy
-  while ls /workspaces/.ahead-heavy-* >/dev/null 2>&1; do for f in /workspaces/.ahead-heavy-*; do p=$(head -1 "$f"); ps -p "$p" >/dev/null 2>&1 || rm -f "$f"; done; ls /workspaces/.ahead-heavy-* >/dev/null 2>&1 && { echo "Waiting for an Ahead Muse to finish its current step"; sleep 30; }; done; echo "CLEAR: start the Now task"
+  while ls /workspaces/.ahead-heavy-* >/dev/null 2>&1; do for f in /workspaces/.ahead-heavy-*; do p=$(sed -n 1p "$f"); g=$(sed -n 2p "$f"); ps -p "$p" >/dev/null 2>&1 || echo "BLOCKED: $f is from a stopped helper. Check its job has ended with: ps -g $g   (only when that lists no processes, delete the file yourself: rm $f)"; done; echo "Waiting for the Ahead Muses to finish their current step"; sleep 30; done; echo "CLEAR: start the Now task"
   ```
 - Start the Now task only after `CLEAR` prints.
 - **After** it finishes: `rm /workspaces/.now-track-busy`, and the Ahead Muses resume on their next 5-minute check.
