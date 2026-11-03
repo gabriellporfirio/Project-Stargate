@@ -3,11 +3,14 @@
 Owner rule (2 Nov): anything started in advance must not depend on, or disturb, the work running now.
 
 ## What is running now (the "Now" track)
+Updated 3 Nov 2026. Re-check this table before starting the Ahead Muses; the owner's Now flag, not this table, is what protects running work.
 | Who | Where | What |
 |---|---|---|
-| Second Muse | `/workspaces/m5` (branch `m5-install-plan`), `/workspaces/m5-tools` | M5 fetch diagnosis and fix, then a live rerun after the owner's "go", then the M4c BYOK fixup in `/workspaces/m4b` (branch `m4c-byok`) |
-| Owner on the Mac | the Mac, plus the codespace transfer server on port 8765 serving `/workspaces/m4a-tools/out` | The Files + Assistant boot test (M4 Part 3C) |
-| Builder Muse | `/workspaces/m4a` (branch `m4a-build`, at `5a9c7e6`) | Idle, **kept free** for any fix the Mac test needs |
+| Install-plan Muse | `/workspaces/m5` (branch `m5-install-plan`, at `0f3ef23`), `/workspaces/m5-tools` | M5 fix 5l (spec v2.2, offline) after GPT approves it, then a live run only on the owner's "go" |
+| Key-fix Muse | `/workspaces/m4b` (branch `m4c-byok`, at `f7e080d`), `/workspaces/m4b-tools` | M4c fix 5m (review fixes, new cloud APK in `out-byok3`) after GPT approves it |
+| Builder Muse | `/workspaces/m4a` (branch `m4a-build`, at `5a9c7e6`), then a new `/workspaces/m4c-live` | The M4c live-proof build after 5m, under the Now flag |
+| Owner on the Mac | the Mac, plus the codespace transfer server on port 8765 when downloading | Mac proofs (M4c live proof next) |
+| Read-only reviewers | `/workspaces/review-*`, `/workspaces/reviews` | Reviews only; they never build |
 
 ## What would start in advance (the "Ahead" track)
 | Who | Where | What |
@@ -20,18 +23,18 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 - **No merges.** Neither merges M5, M4c or each other in this part. M5's work is not inside them, and nothing they do changes M5.
 - **Separate folders.** Each has its own worktree, branch and tools folder. Every other worktree and tools folder is read-only to them. Nothing touches the frozen build outputs the Mac test is downloading.
 - **No shared ports or devices.** They never use the transfer port 8765 or 8080 in the codespace, and tests use any free port. They never run an emulator or adb in the codespace.
-- **Shared resources are bounded, and the Now track has priority.** Separate folders don't share files, but the Muses still share one machine's CPU, memory and disk, so:
-  - **Limits from M4:** at most one Android or Gradle build at a time across all Muses, with at most 2 Gradle workers and 2 GB of heap. Builds and full test suites run under `nice -n 10`.
+- **Shared resources are bounded, and the Now track has priority.** Separate folders don't share files, but the Muses still share one machine's CPU, memory, disk and the build lock, so "no interference" holds only through these rules, not unconditionally:
+  - **Limits from M4:** at most one Android build at a time across all Muses, with at most 2 GB of heap (2 Gradle workers if Gradle is ever used). Builds and full test suites run under `nice -n 10`.
   - **Disk:** a Muse takes the build lock **first**, then measures free space. It estimates the build's full peak: scratch and unpacked copies, the image, payload copies and the gzip. It goes ahead only if free space is at least that peak plus M4's 5 GB reserve, and it records the measured peak afterwards. (The earlier flat "8 GB" estimate is withdrawn.)
-  - **Quiet windows (a handshake):** every heavy step an Ahead Muse runs goes through its helper `ahead-heavy.sh`. Heavy means any Android/Gradle build including standalone APKs, image builds, compression, and full test suites. The helper:
+  - **Quiet windows (a handshake):** every heavy step an Ahead Muse runs goes through its helper `ahead-heavy.sh`. Heavy means any Android/Gradle build including standalone APKs, image builds, compression, full test suites, and any single test that starts an Android build tool (aapt2, d8, javac, zipalign, apksigner, keytool, `build_apps.sh`, the image builder), because those can trip `build_apps.sh`'s process guard during another build. The helper:
     1. refuses to start while `/workspaces/.now-track-busy` exists;
     2. takes the build lock;
-    3. writes a marker `/workspaces/.ahead-heavy-<name>` with its PID;
-    4. checks the flag **again** and backs out if it appeared;
-    5. runs the step;
-    6. runs the step in its own process group, waits until every process in that group has ended, and only then removes the marker.
+    3. writes a marker `/workspaces/.ahead-heavy-<name>` with its PID and the word `pending`, **before** starting anything;
+    4. checks the flag **again** and backs out (deleting the marker) if it appeared;
+    5. starts the step **once**, in its own process group, confirms the group exists, and only then records the group's ID in the marker atomically (temporary file, then rename). If it can't confirm the group, the marker says `unknown` and stays;
+    6. waits until every process in that group has ended, and only then removes the marker.
 
-    A step already running finishes, because nothing is killed mid-write. If the helper is interrupted, or can't confirm that the whole group has finished, it leaves the marker in place and reports it. The owner sets the flag first, then waits until no marker is left before starting the Now task. Because the marker is written before the second check, a Muse that was waiting for the lock can't slip in after the owner's check. The owner's wait loop never deletes a marker by itself. A marker whose helper has stopped blocks CLEAR until the owner checks, by hand, that its job has finished.
+    A step already running finishes, because nothing is killed mid-write. If the helper is interrupted, or can't confirm that the whole group has finished, it leaves the marker in place and reports it. The owner sets the flag first, then waits until no marker is left before starting the Now task. Because the marker is written before the second check, a Muse that was waiting for the lock can't slip in after the owner's check. The owner's wait loop never deletes a marker by itself. A marker whose helper has stopped, or whose group ID is `pending`, `unknown` or unreadable, blocks CLEAR until the owner checks by hand that its job has finished. The helper's tests keep the joint case of a dead helper with a live child.
   - **Output paths:** before any suite or build, each Ahead Muse checks that inherited scripts write only under its own worktree or tools folder.
   - **Planning repo:** the owner fetches it once before starting both Muses. The Muses read the pinned commit and never fetch, so no two processes write to that shared repo at once.
 - **No live calls.** The Ahead track makes no network or Meta calls.
@@ -49,7 +52,7 @@ Owner rule (2 Nov): anything started in advance must not depend on, or disturb, 
 - **Before** a Now-track live run, BYOK build or urgent fix, run these two commands. The second one waits until both Ahead Muses have finished any heavy step in progress. It never deletes anything itself. If it prints BLOCKED, follow its instruction: check the job really has ended, then delete that one marker by hand:
   ```
   touch /workspaces/.now-track-busy
-  while ls /workspaces/.ahead-heavy-* >/dev/null 2>&1; do for f in /workspaces/.ahead-heavy-*; do p=$(sed -n 1p "$f"); g=$(sed -n 2p "$f"); ps -p "$p" >/dev/null 2>&1 || echo "BLOCKED: $f is from a stopped helper. Check its job has ended with: ps -g $g   (only when that lists no processes, delete the file yourself: rm $f)"; done; echo "Waiting for the Ahead Muses to finish their current step"; sleep 30; done; echo "CLEAR: start the Now task"
+  while ls /workspaces/.ahead-heavy-* >/dev/null 2>&1; do for f in /workspaces/.ahead-heavy-*; do p=$(sed -n 1p "$f"); g=$(sed -n 2p "$f"); ps -p "$p" >/dev/null 2>&1 || echo "BLOCKED: $f is from a stopped helper (group: $g). If the group is a number, check its job has ended with: ps -g $g   If it says pending or unknown, check with: ps -ef | grep -v grep | grep -e aapt2 -e d8 -e javac -e gzip -e unittest   Only when nothing of that job is left, delete the file yourself: rm $f"; done; echo "Waiting for the Ahead Muses to finish their current step"; sleep 30; done; echo "CLEAR: start the Now task"
   ```
 - Start the Now task only after `CLEAR` prints.
 - **After** it finishes: `rm /workspaces/.now-track-busy`, and the Ahead Muses resume on their next 5-minute check.
