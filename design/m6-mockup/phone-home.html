@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone home portrait</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#06080F}
+@keyframes osUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes osDots{0%,80%,100%{opacity:.2}40%{opacity:1}}
+@keyframes osPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.os-up{animation:osUp .35s ease both}
+.os-d1{animation-delay:.06s}.os-d2{animation-delay:.12s}.os-d3{animation-delay:.18s}
+.os-dot{animation:osDots 1.2s infinite}.os-dot2{animation-delay:.2s}.os-dot3{animation-delay:.4s}
+.os-pulse{animation:osPulse 2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 100%; height: 844px; box-sizing: border-box; overflow: hidden; background: radial-gradient(120% 55% at 85% 0%, rgba(94,234,212,.11) 0%, rgba(6,8,15,0) 60%), radial-gradient(90% 50% at 0% 100%, rgba(129,140,248,.13) 0%, rgba(6,8,15,0) 60%), #06080F; color: #E6EAF2; font-family: 'Space Grotesk', system-ui, sans-serif; padding: 12px 20px 16px; display: flex; flex-direction: column; gap: 14px">
+
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #A7B0C4; flex: none">
+<sc-if value="{{vHome}}"><img src="logo-light.png" width="18" height="18" alt="" style="display: block"></sc-if><sc-if value="{{vService}}"><span style="font-family: 'JetBrains Mono', monospace">09:41</span></sc-if>
+<span style="{{netChip}}"><span class="os-pulse" style="{{netDot}}"></span>{{netLabel}}</span>
+</div>
+
+<sc-if value="{{vHome}}">
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: center; gap: 28px 40px; min-height: 0">
+<div class="os-up" style="flex: 0 1 300px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px">
+<span style="font-size: 60px; font-weight: 500; letter-spacing: -0.03em; line-height: 1">09:41</span>
+<span style="font-size: 14px; color: #A7B0C4">Saturday 1 November</span>
+<span style="font-size: 13px; color: #5EEAD4; margin-top: 6px">All services running</span>
+</div>
+<div style="flex: 0 1 304px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px">
+<sc-for list="{{tiles}}" as="t" hint-placeholder-count="3">
+<button type="button" onClick="{{t.open}}" class="{{t.cls}}" style="width: 146px; min-height: 128px; border-radius: 20px; border: 1px solid #1E2638; background: rgba(15,22,40,.85); color: #E6EAF2; font-family: inherit; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 16px; cursor: pointer; text-align: left">
+<span style="{{t.iconStyle}}">{{t.icon}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 17px; font-weight: 600">{{t.name}}</span><span style="font-size: 12px; color: #8A94AB">{{t.status}}</span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{vService}}">
+<div style="display: flex; align-items: center; gap: 10px; flex: none">
+<button type="button" onClick="{{home}}" aria-label="Back to home" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #1E2638; background: rgba(15,22,40,.85); color: #E6EAF2; font-size: 18px; cursor: pointer; font-family: inherit">←</button>
+<span style="font-size: 22px; font-weight: 600">{{svcTitle}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{vFiles}}">
+<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; min-height: 0">
+<section class="os-up" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<div style="{{rowStyle}}"><span>Service</span><span style="{{filesChip}}">{{filesState}}</span></div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<button type="button" onClick="{{toggleFiles}}" style="{{btn}}">{{filesToggle}}</button>
+<button type="button" onClick="{{restartFiles}}" style="{{btn}}">Restart</button>
+</div>
+<div style="{{rowStyle}}"><span>Access code</span><span style="font-family: 'JetBrains Mono', monospace; letter-spacing: .12em">{{code}}</span></div>
+<button type="button" onClick="{{newCode}}" style="{{btn}}">New access code</button>
+</section>
+<section class="os-up os-d1" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<div style="background: rgba(15,22,40,.85); border: 1px solid #1E2638; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #A7B0C4"><span>Storage</span><span>41 GB free</span></div>
+<span style="height: 6px; border-radius: 99px; background: #1E2638; overflow: hidden; display: block"><span style="display: block; height: 100%; width: 23%; background: linear-gradient(90deg, #5EEAD4, #818CF8)"></span></span>
+</div>
+<span style="font-size: 13px; color: #8A94AB; line-height: 1.5">{{filesWhere}}</span>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{vAsst}}">
+<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; min-height: 0">
+<section class="os-up" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<div style="{{rowStyle}}"><span>Service</span><span style="{{asstChip}}">{{asstState}}</span></div>
+<div role="group" aria-label="Model" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #0B1020; border-radius: 12px; padding: 4px">
+<button type="button" onClick="{{pickLocal}}" style="{{localStyle}}">On the phone</button>
+<button type="button" onClick="{{pickCloud}}" style="{{cloudStyle}}">Cloud</button>
+</div>
+<span style="{{hintStyle}}">{{modeHint}}</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<button type="button" onClick="{{toggleAsst}}" style="{{btn}}">{{asstToggle}}</button>
+<button type="button" onClick="{{selfTest}}" style="{{btn}}">{{testLabel}}</button>
+</div>
+</section>
+<section class="os-up os-d1" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<div style="{{rowStyle}}"><span>Cloud key</span><span style="color: #A7B0C4">{{keyState}}</span></div>
+<button type="button" onClick="{{toggleKey}}" style="{{btn}}">{{keyAction}}</button>
+<span style="font-size: 13px; color: #8A94AB; line-height: 1.5">Chat from the app on your computer. The phone only runs the model.</span>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{vSys}}">
+<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; min-height: 0">
+<section class="os-up" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<button type="button" onClick="{{toggleNet}}" style="{{rowBtn}}"><span>Network</span><span style="color: #5EEAD4; font-weight: 600">{{netAction}}</span></button>
+<sc-if value="{{netAsk}}">
+<div class="os-up" style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(242,182,109,.08); border: 1px solid rgba(242,182,109,.45)">
+<span style="font-size: 14px; font-weight: 600; color: #F5CF9C">Turn off the network?</span>
+<span style="font-size: 13px; color: #D9CDB8; line-height: 1.5">All services switch to cable only. Computers on your Wi-Fi lose access, and the cloud assistant stops.</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"><button type="button" onClick="{{netCancel}}" style="{{btn}}">Cancel</button><button type="button" onClick="{{netConfirm}}" style="{{btnWarn}}">Cable only</button></div>
+</div>
+</sc-if>
+<div style="{{rowStyle}}"><span>Battery</span><span style="color: #A7B0C4">100% · plugged in</span></div>
+<div style="{{rowStyle}}"><span>System</span><span style="color: #A7B0C4">{{updState}}</span></div>
+</section>
+<section class="os-up os-d1" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<button type="button" onClick="{{checkUpd}}" style="{{btn}}">Check for updates</button>
+<button type="button" onClick="{{reboot}}" style="{{btn}}">{{rebootLabel}}</button>
+</div>
+<span style="font-size: 12px; color: #8A94AB">Build <span style="font-family: 'JetBrains Mono', monospace; color: #E6EAF2">EXAMPLE-0001</span>. Light on battery: nothing runs that you didn't choose.</span>
+</section>
+</div>
+</sc-if>
+
+<span style="flex: none; font-size: 11px; color: #4E5870">Example screen. Numbers are made up for the mockup.</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { view: 'home', net: true, netAsk: false, mode: 'local', code: '482 913', files: 'on', asst: 'on', test: 'idle', key: false, upd: 'idle', boot: 'idle' }; }
+  componentWillUnmount() { if (this.t) clearTimeout(this.t); }
+  later(fn, ms) { if (this.t) clearTimeout(this.t); this.t = setTimeout(fn, ms); }
+  renderVals() {
+    const st = this.state;
+    const local = st.mode === 'local';
+    const cloudBlocked = !local && (!st.net || !st.key);
+    const seg = (on) => 'min-height: 44px; border-radius: 9px; border: 0; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: ' + (on ? '#5EEAD4' : 'transparent') + '; color: ' + (on ? '#06080F' : '#A7B0C4');
+    const ic = (bg, fg) => 'width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 19px; background: ' + bg + '; color: ' + fg;
+    const chip = (s) => 'font-size: 12px; padding: 3px 10px; border-radius: 99px; background: ' + (s === 'on' ? '#13283A' : s === 'busy' ? '#1E2638' : '#2A1F12') + '; color: ' + (s === 'on' ? '#5EEAD4' : s === 'busy' ? '#A7B0C4' : '#F2B66D');
+    const stateLabel = (s) => s === 'on' ? 'Running' : s === 'busy' ? 'Restarting…' : 'Stopped';
+    const titles = { files: 'Files', asst: 'AI assistant', sys: 'Status' };
+    const tiles = [
+      ['files', '▤', 'Files', stateLabel(st.files), 'rgba(94,234,212,.14)', '#5EEAD4'],
+      ['asst', '✦', 'AI assistant', stateLabel(st.asst) + ' · ' + (local ? 'on the phone' : 'cloud'), 'rgba(129,140,248,.18)', '#A5B4FC'],
+      ['sys', '◐', 'Status', st.net ? 'On Wi-Fi' : 'Cable only', 'rgba(255,255,255,.06)', '#A7B0C4']
+    ].map((t, i) => ({ name: t[2], icon: t[1], status: t[3], iconStyle: ic(t[4], t[5]), cls: 'os-up os-d' + (i + 1), open: () => this.setState({ view: t[0], test: 'idle' }) }));
+    const box = 'min-height: 48px; border-radius: 14px; border: 1px solid #1E2638; background: rgba(15,22,40,.85); color: #E6EAF2; font-family: inherit; font-size: 15px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px';
+    return {
+      vHome: st.view === 'home', vService: st.view !== 'home', vFiles: st.view === 'files', vAsst: st.view === 'asst', vSys: st.view === 'sys',
+      svcTitle: titles[st.view] || '', home: () => this.setState({ view: 'home' }), tiles,
+      rowStyle: box, rowBtn: box + '; cursor: pointer',
+      btn: 'min-height: 48px; border-radius: 12px; border: 1px solid #1E2638; background: transparent; color: #5EEAD4; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer',
+      netChip: 'display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; background: ' + (st.net ? '#13283A' : '#2A1F12') + '; color: ' + (st.net ? '#5EEAD4' : '#F2B66D'),
+      netDot: 'width: 7px; height: 7px; border-radius: 99px; background: ' + (st.net ? '#5EEAD4' : '#F2B66D'),
+      netLabel: st.net ? 'Wi-Fi' : 'Cable only', netAction: st.net ? 'Turn off' : 'Turn on', netAsk: st.netAsk,
+      netCancel: () => this.setState({ netAsk: false }), netConfirm: () => this.setState({ net: false, netAsk: false }),
+      btnWarn: 'min-height: 48px; border-radius: 12px; border: 0; background: #F2B66D; color: #06080F; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer',
+      filesWhere: st.net ? 'Browse and upload from the app on your computer, over your home Wi-Fi (paired computers only) or the cable.' : 'Network off: browse and upload from your computer through the cable only.',
+      toggleNet: () => { if (st.net) this.setState({ netAsk: true }); else this.setState({ net: true }); },
+      filesChip: chip(st.files), filesState: stateLabel(st.files), filesToggle: st.files === 'off' ? 'Start' : 'Stop',
+      toggleFiles: () => this.setState({ files: st.files === 'off' ? 'on' : 'off' }),
+      restartFiles: () => { this.setState({ files: 'busy' }); this.later(() => this.setState({ files: 'on' }), 1200); },
+      code: st.code,
+      newCode: () => { const n = () => String(Math.floor(100 + Math.random() * 900)); this.setState({ code: n() + ' ' + n() }); },
+      asstChip: chip(st.asst), asstState: stateLabel(st.asst), asstToggle: st.asst === 'off' ? 'Start' : 'Stop',
+      toggleAsst: () => this.setState({ asst: st.asst === 'off' ? 'on' : 'off', test: 'idle' }),
+      localStyle: seg(local), cloudStyle: seg(!local),
+      pickLocal: () => this.setState({ mode: 'local', test: 'idle' }),
+      pickCloud: () => this.setState({ mode: 'cloud', test: 'idle' }),
+      modeHint: local ? 'Llama 3.2 1B runs on this phone. Works with no network.' : (!st.key ? 'Muse Spark Open, hosted on Baseten. Add your key first.' : !st.net ? 'Muse Spark Open, hosted on Baseten. Needs the network: turn it on in Status.' : 'Muse Spark Open, hosted on Baseten. Uses your key and budget.'),
+      hintStyle: 'font-size: 12px; line-height: 1.45; color: ' + (cloudBlocked ? '#F2B66D' : '#8A94AB'),
+      testLabel: st.test === 'busy' ? 'Testing…' : st.test === 'ok' ? '✓ Answered · 0.7 s' : st.test === 'fail' ? 'Can\'t reach it' : 'Self-test',
+      selfTest: () => { if (st.asst !== 'on' || cloudBlocked) { this.setState({ test: 'fail' }); return; } this.setState({ test: 'busy' }); this.later(() => this.setState({ test: 'ok' }), 1200); },
+      keyState: st.key ? 'Set (hidden)' : 'Not set', keyAction: st.key ? 'Remove key' : 'Add key from your computer',
+      toggleKey: () => this.setState({ key: !st.key }),
+      updState: st.upd === 'busy' ? 'Checking…' : st.upd === 'done' ? 'Up to date' : 'Build EXAMPLE-0001',
+      checkUpd: () => { this.setState({ upd: 'busy' }); this.later(() => this.setState({ upd: 'done' }), 1200); },
+      rebootLabel: st.boot === 'ask' ? 'Tap again to reboot' : 'Reboot phone',
+      reboot: () => { if (st.boot === 'ask') { this.setState({ boot: 'idle', view: 'home' }); } else this.setState({ boot: 'ask' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guided phone setup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#06080F}
+.gx-bg{background-color:#06080F;background-image:radial-gradient(90% 70% at 70% 10%,rgba(94,234,212,.08) 0%,rgba(6,8,15,0) 60%),radial-gradient(70% 60% at 0% 100%,rgba(129,140,248,.10) 0%,rgba(6,8,15,0) 60%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:auto,auto,40px 40px,40px 40px}
+@keyframes gxUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes gxFade{from{opacity:0}to{opacity:1}}
+@keyframes gxSpin{to{transform:rotate(360deg)}}
+@keyframes gxSpinR{to{transform:rotate(-360deg)}}
+@keyframes gxPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes gxGrow{from{width:0}}
+@keyframes gxScan{0%{transform:translateY(0)}100%{transform:translateY(150px)}}
+@keyframes gxDash{to{stroke-dashoffset:-24}}
+@keyframes gxRing{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+@keyframes gxFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.gx-up{animation:gxUp .55s cubic-bezier(.2,.8,.2,1) both}
+.gx-fade{animation:gxFade .6s ease both}
+.gx-d1{animation-delay:.15s}.gx-d2{animation-delay:.35s}.gx-d3{animation-delay:.55s}.gx-d4{animation-delay:.75s}.gx-d5{animation-delay:.95s}.gx-d6{animation-delay:1.15s}.gx-d7{animation-delay:1.35s}
+.gx-spin{transform-origin:center;transform-box:fill-box;animation:gxSpin 18s linear infinite}
+.gx-spinr{transform-origin:center;transform-box:fill-box;animation:gxSpinR 26s linear infinite}
+.gx-pulse{animation:gxPulse 1.4s ease-in-out infinite}
+.gx-grow{animation:gxGrow 1.2s cubic-bezier(.2,.8,.2,1) both}
+.gx-scan{animation:gxScan 1.6s ease-in-out infinite alternate}
+.gx-dash{animation:gxDash 1s linear infinite}
+.gx-ring{transform-origin:center;transform-box:fill-box;animation:gxRing 2.2s ease-out infinite}
+.gx-float{animation:gxFloat 5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div class="gx-bg" style="width: 100%; min-height: 800px; box-sizing: border-box; color: #E6EAF2; font-family: 'Space Grotesk', system-ui, sans-serif; display: flex; flex-direction: column; padding: 24px 40px 28px; gap: 20px">
+
+<header style="display: flex; align-items: center; gap: 20px">
+<span style="display: flex; align-items: center; gap: 8px; flex: none"><img src="logo-light.png" width="28" height="28" alt="" style="display: block"></span>
+<ol aria-label="Progress" style="list-style: none; margin: 0; padding: 0; flex: 1; display: flex; gap: 6px">
+<sc-for list="{{segs}}" as="g" hint-placeholder-count="9">
+<li style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+<span style="{{g.bar}}"></span>
+<span style="{{g.label}}">{{g.name}}</span>
+</li>
+</sc-for>
+</ol>
+</header>
+
+<main style="flex: 1; display: flex; min-height: 0">
+
+<sc-if value="{{s0}}">
+<section style="flex: 1; display: flex; align-items: center; gap: 48px; flex-wrap: wrap">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 22px; max-width: 560px">
+<span class="gx-up" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: .14em; color: #5EEAD4">OLD PHONE · NEW JOB</span>
+<h1 class="gx-up gx-d1" style="margin: 0; font-size: 52px; line-height: 1.04; font-weight: 600; letter-spacing: -0.02em">Turn the phone in your drawer into something useful.</h1>
+<p class="gx-up gx-d2" style="margin: 0; font-size: 18px; line-height: 1.55; color: #A7B0C4">Plug it in. We check what it can do, suggest what it could run for you, research how to do it safely, then build and install a clean system made just for it.</p>
+<div class="gx-up gx-d3" style="display: flex; gap: 10px; flex-wrap: wrap">
+<span style="padding: 8px 14px; border: 1px solid #1E2638; border-radius: 99px; font-size: 14px; color: #C9D0DE">1 · Check</span>
+<span style="padding: 8px 14px; border: 1px solid #1E2638; border-radius: 99px; font-size: 14px; color: #C9D0DE">2 · Suggest</span>
+<span style="padding: 8px 14px; border: 1px solid #1E2638; border-radius: 99px; font-size: 14px; color: #C9D0DE">3 · Research</span>
+<span style="padding: 8px 14px; border: 1px solid #1E2638; border-radius: 99px; font-size: 14px; color: #C9D0DE">4 · Build and install</span>
+</div>
+<p class="gx-up gx-d4" style="margin: 0; font-size: 14px; color: #6F7A92">About 20 minutes. Nothing changes on your phone until you say so.</p>
+</div>
+<div class="gx-fade gx-d2" style="flex: 1 1 380px; display: grid; place-items: center; align-self: stretch">
+<svg width="380" height="380" viewBox="0 0 380 380" aria-hidden="true">
+<defs><linearGradient id="gxg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#5EEAD4"></stop><stop offset="1" stop-color="#818CF8"></stop></linearGradient></defs>
+<circle class="gx-spin" cx="190" cy="190" r="170" fill="none" stroke="#1E2638" stroke-width="1" stroke-dasharray="2 10"></circle>
+<circle class="gx-spinr" cx="190" cy="190" r="140" fill="none" stroke="url(#gxg)" stroke-width="1.5" stroke-dasharray="60 30 8 30" opacity=".7"></circle>
+<circle class="gx-spin" cx="190" cy="190" r="112" fill="none" stroke="#2A3550" stroke-width="1" stroke-dasharray="1 6"></circle>
+<g class="gx-float">
+<rect x="150" y="110" width="80" height="160" rx="14" fill="#0B1020" stroke="url(#gxg)" stroke-width="2"></rect>
+<rect x="160" y="128" width="60" height="112" rx="4" fill="#0F1628"></rect>
+<rect x="166" y="138" width="22" height="22" rx="5" fill="#5EEAD4" opacity=".85"></rect>
+<rect x="192" y="138" width="22" height="22" rx="5" fill="#818CF8" opacity=".85"></rect>
+<rect x="166" y="164" width="22" height="22" rx="5" fill="#2A3550"></rect>
+<rect x="192" y="164" width="22" height="22" rx="5" fill="#2A3550"></rect>
+<rect x="166" y="198" width="48" height="4" rx="2" fill="#2A3550"></rect>
+<rect x="166" y="208" width="34" height="4" rx="2" fill="#2A3550"></rect>
+<circle cx="190" cy="255" r="4" fill="#2A3550"></circle>
+</g>
+<circle cx="330" cy="190" r="4" fill="#5EEAD4"><animateTransform attributeName="transform" type="rotate" from="0 190 190" to="360 190 190" dur="9s" repeatCount="indefinite"></animateTransform></circle>
+<circle cx="50" cy="190" r="3" fill="#818CF8"><animateTransform attributeName="transform" type="rotate" from="0 190 190" to="-360 190 190" dur="14s" repeatCount="indefinite"></animateTransform></circle>
+</svg>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s1}}">
+<section style="flex: 1; display: flex; gap: 40px; align-items: center; flex-wrap: wrap">
+<div style="flex: 1 1 440px; display: flex; flex-direction: column; gap: 18px; max-width: 560px">
+<h2 class="gx-up" style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">Plug your phone in</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+<li class="gx-up gx-d1" style="display: flex; gap: 14px; padding: 14px 16px; background: rgba(15,22,40,.8); border: 1px solid #1E2638; border-radius: 14px"><span style="flex: none; width: 28px; height: 28px; border-radius: 99px; background: #13283A; color: #5EEAD4; display: grid; place-items: center; font-weight: 700">1</span><span><b style="font-weight: 600">Use a data cable.</b> <span style="color: #A7B0C4">Some cables only charge. If nothing happens, try another.</span></span></li>
+<li class="gx-up gx-d2" style="display: flex; gap: 14px; padding: 14px 16px; background: rgba(15,22,40,.8); border: 1px solid #1E2638; border-radius: 14px"><span style="flex: none; width: 28px; height: 28px; border-radius: 99px; background: #13283A; color: #5EEAD4; display: grid; place-items: center; font-weight: 700">2</span><span><b style="font-weight: 600">Turn on USB debugging.</b> <span style="color: #A7B0C4">Settings, About phone, tap Build number 7 times, then Developer options.</span></span></li>
+<li class="gx-up gx-d3" style="display: flex; gap: 14px; padding: 14px 16px; background: rgba(15,22,40,.8); border: 1px solid #1E2638; border-radius: 14px"><span style="flex: none; width: 28px; height: 28px; border-radius: 99px; background: #13283A; color: #5EEAD4; display: grid; place-items: center; font-weight: 700">3</span><span><b style="font-weight: 600">Unlock the screen and tap Allow.</b> <span style="color: #A7B0C4">Your phone asks if it can trust this computer.</span></span></li>
+</ol>
+<sc-if value="{{helpClosed}}"><button type="button" onClick="{{openHelp}}" class="gx-up gx-d4" style="align-self: flex-start; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #2A3550; background: transparent; color: #5EEAD4; font-family: inherit; font-size: 14px; cursor: pointer">Can't find Developer options? Get steps for your phone</button></sc-if>
+<sc-if value="{{helpOpen}}">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.35)">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 15px; font-weight: 600">Which phone is it?</span><button type="button" onClick="{{closeHelp}}" aria-label="Close" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #8A94AB; font-size: 16px; cursor: pointer">✕</button></div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{brands}}" as="b" hint-placeholder-count="5"><button type="button" onClick="{{b.pick}}" style="{{b.style}}">{{b.name}}</button></sc-for>
+</div>
+<sc-if value="{{helpLooking}}"><span class="gx-pulse" style="font-size: 14px; color: #A5B4FC">Researching the steps for {{brandName}}…</span></sc-if>
+<sc-if value="{{helpDone}}">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 8px">
+<ol style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.65; color: #D6DBE6"><sc-for list="{{helpSteps}}" as="h" hint-placeholder-count="4"><li>{{h}}</li></sc-for></ol>
+<span style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #13283A; color: #5EEAD4">Source: the maker's support page (example)</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<div class="gx-up gx-d4" style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(242,182,109,.08); border: 1px solid rgba(242,182,109,.35); color: #F5CF9C; font-size: 14px; line-height: 1.5"><span aria-hidden="true">⚠</span><span>Use a phone you don't need any more. Installing later will erase it, and we'll ask you clearly before that happens. Back up anything you want to keep now.</span></div>
+</div>
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; align-items: center; gap: 18px">
+<svg width="300" height="260" viewBox="0 0 300 260" aria-hidden="true">
+<rect x="20" y="70" width="110" height="74" rx="8" fill="#0F1628" stroke="#2A3550" stroke-width="1.5"></rect>
+<rect x="8" y="144" width="134" height="10" rx="3" fill="#1E2638"></rect>
+<path d="M142 120 C 190 120, 190 150, 214 150" fill="none" stroke="{{cableColor}}" stroke-width="2.5" stroke-dasharray="6 6" class="gx-dash"></path>
+<rect x="214" y="60" width="66" height="132" rx="12" fill="#0B1020" stroke="{{phoneStroke}}" stroke-width="2"></rect>
+<rect x="222" y="74" width="50" height="96" rx="3" fill="#0F1628"></rect>
+<sc-if value="{{connLooking}}"><circle class="gx-ring" cx="247" cy="126" r="22" fill="none" stroke="#5EEAD4" stroke-width="1.5"></circle></sc-if>
+<sc-if value="{{connFound}}"><circle cx="247" cy="122" r="16" fill="#13283A"></circle><path d="M239 122l6 6 11-12" fill="none" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></sc-if>
+</svg>
+<sc-if value="{{connIdle}}"><span style="color: #A7B0C4; font-size: 15px">Waiting for a phone…</span></sc-if>
+<sc-if value="{{connLooking}}"><span class="gx-pulse" style="color: #5EEAD4; font-size: 15px">Looking for your phone…</span></sc-if>
+<sc-if value="{{connFound}}">
+<div class="gx-up" style="display: flex; flex-direction: column; align-items: center; gap: 4px">
+<span style="font-size: 20px; font-weight: 600">Found: Example Phone X2</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A7B0C4">Android 12 · connected and trusted</span>
+</div>
+</sc-if>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s2}}">
+<section style="flex: 1; display: flex; flex-direction: column; gap: 22px; max-width: 900px">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">A few quick questions</h2>
+<p style="margin: 0; color: #A7B0C4; font-size: 16px">So we suggest things you'll actually use.</p>
+</div>
+<div class="gx-up gx-d1" style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 15px; font-weight: 600">What would help you most?</span>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px">
+<sc-for list="{{goals}}" as="o" hint-placeholder-count="4">
+<button type="button" onClick="{{o.pick}}" style="{{o.style}}"><span style="font-size: 22px" aria-hidden="true">{{o.icon}}</span><span style="font-size: 16px; font-weight: 600">{{o.title}}</span><span style="font-size: 13px; color: #A7B0C4">{{o.sub}}</span></button>
+</sc-for>
+</div>
+</div>
+<div class="gx-up gx-d2" style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 15px; font-weight: 600">Where will the phone live?</span>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<sc-for list="{{places}}" as="p" hint-placeholder-count="2">
+<button type="button" onClick="{{p.pick}}" style="{{p.style}}">{{p.title}}</button>
+</sc-for>
+</div>
+</div>
+<div class="gx-up gx-d3" style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 15px; font-weight: 600">Can it use the internet?</span>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<sc-for list="{{nets}}" as="n" hint-placeholder-count="2">
+<button type="button" onClick="{{n.pick}}" style="{{n.style}}">{{n.title}}</button>
+</sc-for>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s3}}">
+<section style="flex: 1; display: flex; flex-direction: column; gap: 20px">
+<div class="gx-up" style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">Here's your phone</h2><p style="margin: 0; color: #A7B0C4; font-size: 16px">We read this from the phone. We didn't change anything.</p></div>
+<span class="gx-up gx-d6" style="padding: 8px 14px; border-radius: 99px; background: #13283A; color: #5EEAD4; font-size: 14px; font-weight: 600">Enough for files and a small AI model</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
+<sc-for list="{{facts}}" as="f" hint-placeholder-count="6">
+<div class="{{f.cls}}" style="background: rgba(15,22,40,.85); border: 1px solid #1E2638; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 13px; color: #8A94AB; letter-spacing: .04em">{{f.name}}</span><span style="{{f.tagStyle}}">{{f.tag}}</span></div>
+<span style="font-size: 26px; font-weight: 600; font-family: 'JetBrains Mono', monospace">{{f.value}}</span>
+<span style="{{f.track}}"><span class="gx-grow" style="{{f.bar}}"></span></span>
+<span style="font-size: 13px; color: #A7B0C4">{{f.note}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s4}}">
+<section style="flex: 1; display: flex; flex-direction: column; gap: 18px">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">What it can do for you</h2><p style="margin: 0; color: #A7B0C4; font-size: 16px">Only what this phone can run well. Pick any. The bar shows how well each one suits the phone.</p></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px">
+<sc-for list="{{offers}}" as="s" hint-placeholder-count="4">
+<button type="button" onClick="{{s.toggle}}" class="{{s.cls}}" style="{{s.style}}">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px"><span style="font-size: 18px; font-weight: 600; text-align: left">{{s.title}}</span><span style="{{s.tick}}">{{s.mark}}</span></div>
+<sc-if value="{{s.adv}}"><span style="font-size: 11px; letter-spacing: .06em; padding: 3px 9px; border-radius: 99px; background: rgba(129,140,248,.16); color: #A5B4FC; border: 1px solid rgba(129,140,248,.4)">ADVANCED · AI MODEL</span></sc-if>
+<span style="font-size: 14px; color: #A7B0C4; line-height: 1.45; text-align: left">{{s.sub}}</span>
+<div style="display: flex; align-items: center; gap: 10px; width: 100%; margin-top: auto"><span style="font-size: 12px; color: #8A94AB; width: 26px">Fit</span><span style="flex: 1; height: 6px; border-radius: 99px; background: #1E2638; overflow: hidden; display: block"><span class="gx-grow" style="{{s.fit}}"></span></span><span style="font-size: 12px; color: #8A94AB">{{s.fitLabel}}</span></div>
+</button>
+</sc-for>
+</div>
+<div class="gx-up gx-d5" style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(15,22,40,.85); border: 1px dashed #2A3550; color: #A7B0C4; font-size: 14px"><span aria-hidden="true">⊘</span><span><b style="color: #E6EAF2; font-weight: 600">Not offered: 4K media server.</b> This phone has too little memory to stream 4K smoothly, so we won't promise it.</span></div>
+</section>
+</sc-if>
+
+<sc-if value="{{s5}}">
+<section style="flex: 1; display: flex; gap: 40px; flex-wrap: wrap">
+<div style="flex: 1 1 520px; display: flex; flex-direction: column; gap: 16px">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">Researching how to do it safely</h2><p style="margin: 0; color: #A7B0C4; font-size: 16px">Researched with Meta's Muse Spark. Every finding links to its source, and anything unconfirmed is marked unknown.</p></div>
+<ol style="margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; border-left: 1px solid #1E2638">
+<sc-for list="{{finds}}" as="r" hint-placeholder-count="5">
+<li class="{{r.cls}}" style="position: relative; padding: 0 0 18px 22px">
+<span style="{{r.dot}}"></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 600">{{r.title}}</span><span style="font-size: 13px; color: #A7B0C4">{{r.detail}}</span><span style="{{r.srcStyle}}">{{r.src}}</span></div>
+</li>
+</sc-for>
+</ol>
+</div>
+<div class="gx-up gx-d2" style="flex: 0 1 300px; display: flex; flex-direction: column; gap: 14px">
+<div style="background: rgba(15,22,40,.85); border: 1px solid #1E2638; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; align-items: center">
+<svg width="160" height="160" viewBox="0 0 160 160" aria-hidden="true">
+<circle cx="80" cy="80" r="64" fill="none" stroke="#1E2638" stroke-width="12"></circle>
+<circle cx="80" cy="80" r="64" fill="none" stroke="#5EEAD4" stroke-width="12" stroke-linecap="round" stroke-dasharray="314 402" transform="rotate(-90 80 80)"><animate attributeName="stroke-dasharray" from="0 402" to="314 402" dur="1.6s" fill="freeze"></animate></circle>
+<circle cx="80" cy="80" r="64" fill="none" stroke="#F2B66D" stroke-width="12" stroke-linecap="round" stroke-dasharray="60 402" stroke-dashoffset="-334" transform="rotate(-90 80 80)"></circle>
+<text x="80" y="80" text-anchor="middle" fill="#E6EAF2" font-family="JetBrains Mono, monospace" font-size="28">4/5</text>
+<text x="80" y="100" text-anchor="middle" fill="#8A94AB" font-size="12">confirmed</text>
+</svg>
+<div style="display: flex; gap: 16px; font-size: 13px; color: #A7B0C4"><span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: #5EEAD4"></span> Sourced</span><span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: #F2B66D"></span> Unknown</span></div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #6F7A92">Researched with Meta's Muse Spark. Code checks every finding against its source.</p>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s6}}">
+<section style="flex: 1; display: flex; gap: 40px; flex-wrap: wrap">
+<div style="flex: 1 1 520px; display: flex; flex-direction: column; gap: 18px">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">Building your phone's new system</h2><p style="margin: 0; color: #A7B0C4; font-size: 16px">This happens on your computer. The phone isn't touched yet.</p></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{stages}}" as="b" hint-placeholder-count="5">
+<div style="{{b.row}}"><span style="{{b.icon}}">{{b.mark}}</span><span style="flex: 1">{{b.title}}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8A94AB">{{b.meta}}</span></div>
+</sc-for>
+</div>
+<div style="height: 8px; border-radius: 99px; background: #1E2638; overflow: hidden"><span style="{{buildBar}}"></span></div>
+</div>
+<div class="gx-up gx-d2" style="flex: 0 1 320px; display: flex; flex-direction: column; gap: 14px">
+<div style="background: rgba(15,22,40,.85); border: 1px solid #1E2638; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: #8A94AB; margin-bottom: 4px">Space on the phone's system area</span>
+<div style="display: flex; justify-content: space-between; font-size: 13px"><span>Original system</span><span style="font-family: 'JetBrains Mono', monospace">1.6 GB</span></div>
+<span style="height: 10px; border-radius: 99px; background: #1E2638; display: block; overflow: hidden"><span class="gx-grow" style="display: block; height: 100%; width: 46%; background: #2A3550"></span></span>
+<div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 6px"><span>New system with your apps</span><span style="font-family: 'JetBrains Mono', monospace">2.8 GB</span></div>
+<span style="height: 10px; border-radius: 99px; background: #1E2638; display: block; overflow: hidden"><span class="gx-grow gx-d2" style="display: block; height: 100%; width: 80%; background: linear-gradient(90deg, #5EEAD4, #818CF8)"></span></span>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #8A94AB"><span>Limit 3.5 GB</span><span>Fits ✓</span></div>
+</div>
+<div style="background: #04060B; border: 1px solid #1E2638; border-radius: 12px; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: #7E8AA8; min-height: 110px">
+<sc-for list="{{logLines}}" as="l" hint-placeholder-count="4"><div class="gx-fade">{{l}}</div></sc-for>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s7}}">
+<section style="flex: 1; display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+<div style="flex: 1 1 520px; display: flex; flex-direction: column; gap: 18px">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.015em">{{installTitle}}</h2><p style="margin: 0; color: #A7B0C4; font-size: 16px">{{flashSub}}</p></div>
+
+<sc-if value="{{flashIdle}}">
+<div role="group" aria-label="Where to run it" class="gx-up" style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" onClick="{{pickEmu}}" style="{{emuChip}}">Android Emulator (this demo)</button>
+<button type="button" onClick="{{pickPhone}}" style="{{phoneChip}}">Real phone (later)</button>
+</div>
+</sc-if>
+<sc-if value="{{emuIdle}}">
+<div class="gx-up gx-d1" style="display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 16px; background: rgba(94,234,212,.06); border: 1px solid rgba(94,234,212,.35)">
+<span style="font-size: 17px; font-weight: 600; color: #BDF5EC">Boots the system built for this phone profile, in the Android Emulator</span>
+<span style="font-size: 14px; color: #A7B0C4; line-height: 1.55">Your phone isn't changed. When we boot it, we check that it's the exact system we built, then send a test file and ask the assistant a question with the network off.</span>
+</div>
+</sc-if>
+<sc-if value="{{phoneIdle}}">
+<div class="gx-up gx-d1" style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 16px; background: rgba(242,109,109,.07); border: 1px solid rgba(242,109,109,.4)">
+<span style="font-size: 17px; font-weight: 600; color: #F7A8A8">This erases everything on Example Phone X2</span>
+<ul style="margin: 0; padding-left: 18px; color: #D9C2C2; font-size: 14px; line-height: 1.7"><li>Photos, apps and accounts on the phone will be gone.</li><li>Unlocking the bootloader can wipe the phone by itself, isn't possible on every model, and Retry can't undo it.</li><li>Keep it plugged in for the whole install, about 6 minutes.</li><li>Keep it charged above 50%.</li></ul>
+<button type="button" onClick="{{toggleAgree}}" style="{{agreeStyle}}"><span style="{{agreeBox}}">{{agreeMark}}</span><span>I've backed up what I need. Erase and install.</span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{phoneBusy}}">
+<div class="gx-pulse" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 16px; background: rgba(242,182,109,.1); border: 1px solid rgba(242,182,109,.5)">
+<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3l12 21H2z" fill="none" stroke="#F2B66D" stroke-width="2" stroke-linejoin="round"></path><path d="M14 11v6M14 20v1" stroke="#F2B66D" stroke-width="2" stroke-linecap="round"></path></svg>
+<span style="font-size: 18px; font-weight: 600; color: #F5CF9C">Don't unplug your phone</span>
+</div>
+</sc-if>
+
+<sc-if value="{{flashError}}">
+<div class="gx-up" style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 16px; background: rgba(242,182,109,.08); border: 1px solid rgba(242,182,109,.45)">
+<span style="font-size: 17px; font-weight: 600; color: #F5CF9C">Connection lost</span>
+<span style="font-size: 14px; color: #D9CDB8; line-height: 1.55">The cable came loose while sending. Plug it back in and press Retry. We'll start the install again from the beginning.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{flashShowSteps}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{fsteps}}" as="b" hint-placeholder-count="5">
+<div style="{{b.row}}"><span style="{{b.icon}}">{{b.mark}}</span><span style="flex: 1">{{b.title}}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8A94AB">{{b.meta}}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{phoneBusy}}"><button type="button" onClick="{{simFail}}" style="align-self: flex-start; min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px dashed #2A3550; background: transparent; color: #6F7A92; font-family: inherit; font-size: 13px; cursor: pointer">Mockup only: simulate an unplugged cable</button></sc-if>
+</div>
+<div class="gx-up gx-d2" style="flex: 1 1 300px; display: grid; place-items: center; align-self: stretch">
+<svg width="260" height="300" viewBox="0 0 260 300" aria-hidden="true">
+<rect x="80" y="30" width="100" height="200" rx="16" fill="#0B1020" stroke="{{flashStroke}}" stroke-width="2"></rect>
+<rect x="90" y="48" width="80" height="160" rx="4" fill="#0F1628"></rect>
+<sc-if value="{{flashBusy}}"><rect class="gx-scan" x="90" y="48" width="80" height="10" fill="#5EEAD4" opacity=".35"></rect></sc-if>
+<path d="M130 230 L130 290" stroke="{{cableColor2}}" stroke-width="3" stroke-dasharray="6 6" class="gx-dash"></path>
+<text x="130" y="134" text-anchor="middle" fill="#E6EAF2" font-family="JetBrains Mono, monospace" font-size="22">{{flashPct}}</text>
+</svg>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{s8}}">
+<section style="flex: 1; display: flex; gap: 48px; align-items: center; flex-wrap: wrap">
+<div style="flex: 1 1 460px; display: flex; flex-direction: column; gap: 20px; max-width: 580px">
+<span class="gx-up" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: .14em; color: #5EEAD4">ALL DONE</span>
+<h1 class="gx-up gx-d1" style="margin: 0; font-size: 50px; line-height: 1.05; font-weight: 600; letter-spacing: -0.02em">{{doneTitle}}</h1>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="gx-up gx-d2" style="padding: 12px 16px; border-radius: 12px; background: rgba(15,22,40,.85); border: 1px solid #1E2638">✓ {{done1}}</div>
+<div class="gx-up gx-d3" style="padding: 12px 16px; border-radius: 12px; background: rgba(15,22,40,.85); border: 1px solid #1E2638">✓ System matches the one we built</div>
+<div class="gx-up gx-d4" style="padding: 12px 16px; border-radius: 12px; background: rgba(15,22,40,.85); border: 1px solid #1E2638">✓ {{done3}}</div>
+</div>
+<div class="gx-up gx-d5" style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgba(94,234,212,.08); border: 1px solid rgba(94,234,212,.35); color: #BDF5EC; font-size: 14px"><span aria-hidden="true">✓</span><span>{{doneNote}}</span></div>
+<a class="gx-up gx-d6" href="Use.dc.html" style="align-self: flex-start; min-height: 48px; display: inline-flex; align-items: center; padding: 0 24px; border-radius: 12px; border: 1px solid #5EEAD4; color: #5EEAD4; text-decoration: none; font-weight: 600">Open Files and Assistant</a>
+</div>
+<div class="gx-fade gx-d2" style="flex: 1 1 360px; display: grid; place-items: center; align-self: stretch">
+<svg width="340" height="340" viewBox="0 0 340 340" aria-hidden="true">
+<defs><linearGradient id="gxg2" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#5EEAD4"></stop><stop offset="1" stop-color="#818CF8"></stop></linearGradient></defs>
+<circle class="gx-ring" cx="170" cy="170" r="90" fill="none" stroke="#5EEAD4" stroke-width="1.5"></circle>
+<circle class="gx-spin" cx="170" cy="170" r="150" fill="none" stroke="#1E2638" stroke-dasharray="2 10"></circle>
+<circle cx="170" cy="170" r="70" fill="#0F1628" stroke="url(#gxg2)" stroke-width="2"></circle>
+<path d="M140 172l20 20 40-44" fill="none" stroke="#5EEAD4" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="100"><animate attributeName="stroke-dashoffset" from="100" to="0" dur=".8s" begin=".3s" fill="freeze"></animate></path>
+</svg>
+</div>
+</section>
+</sc-if>
+
+</main>
+
+<footer style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<button type="button" onClick="{{back}}" style="{{backStyle}}">Back</button>
+<span style="font-size: 12px; color: #4E5870">Mockup · example data only</span>
+<button type="button" onClick="{{primary}}" style="{{primaryStyle}}">{{primaryLabel}}</button>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { step: 0, conn: 'idle', goal: null, place: 'shelf', net: 'yes', svc: { files: true, asst: true, cloud: true }, build: -1, flash: 'idle', fstage: -1, agree: false, help: 'closed', brand: null, target: 'emu' };
+  }
+  componentWillUnmount() { this.clear(); }
+  clear() { if (this.t) clearTimeout(this.t); if (this.iv) clearInterval(this.iv); }
+  go(step) {
+    this.clear();
+    const st = this.state, extra = {};
+    if (st.conn === 'looking') extra.conn = 'idle';
+    if (st.build >= 0 && st.build < 5) extra.build = -1;
+    if (st.flash === 'running') extra.flash = 'idle';
+    this.setState(Object.assign({ step }, extra));
+  }
+  runBuild() { this.clear(); this.setState({ build: 0 }); this.iv = setInterval(() => { const b = this.state.build + 1; this.setState({ build: b }); if (b >= 5) clearInterval(this.iv); }, 900); }
+  runFlash() { this.clear(); this.setState({ flash: 'running', fstage: 0 }); this.iv = setInterval(() => { const f = this.state.fstage + 1; if (f >= 5) { clearInterval(this.iv); this.setState({ fstage: 5, flash: 'done' }); } else this.setState({ fstage: f }); }, 1100); }
+  renderVals() {
+    const st = this.state;
+    const names = ['Welcome', 'Connect', 'Questions', 'Your phone', 'Services', 'Research', 'Build', 'Boot', 'Done'];
+    const segs = names.map((n, i) => ({
+      name: n,
+      bar: 'display: block; height: 3px; border-radius: 99px; background: ' + (i < st.step ? '#5EEAD4' : i === st.step ? 'linear-gradient(90deg, #5EEAD4, #818CF8)' : '#1E2638'),
+      label: 'font-size: 11px; letter-spacing: .04em; color: ' + (i === st.step ? '#E6EAF2' : i < st.step ? '#5EEAD4' : '#4E5870')
+    }));
+    const chip = (on) => 'min-height: 48px; padding: 0 18px; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 15px; color: #E6EAF2; border: 1px solid ' + (on ? '#5EEAD4' : '#1E2638') + '; background: ' + (on ? 'rgba(94,234,212,.10)' : 'rgba(15,22,40,.85)');
+    const goalDefs = [['files', '▤', 'Store my files', 'Keep files from your computer at home'], ['ai', '✦', 'A private assistant', 'Ask questions, even offline'], ['both', '◎', 'Both', 'Files and an assistant'], ['unsure', '?', 'Not sure', 'Suggest something for me']];
+    const goals = goalDefs.map(g => ({ icon: g[1], title: g[2], sub: g[3], pick: () => this.setState({ goal: g[0] }), style: chip(st.goal === g[0]) + '; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px; text-align: left; min-height: 120px' }));
+    const places = [['shelf', 'On a shelf, plugged in'], ['carry', 'Carried around']].map(p => ({ title: p[1], pick: () => this.setState({ place: p[0] }), style: chip(st.place === p[0]) }));
+    const nets = [['yes', 'Yes, home Wi-Fi'], ['no', 'No, keep it offline']].map(p => ({ title: p[1], pick: () => this.setState({ net: p[0] }), style: chip(st.net === p[0]) }));
+    const tag = (c) => 'font-size: 11px; padding: 3px 8px; border-radius: 99px; background: ' + (c === 'ok' ? '#13283A' : '#2A1F12') + '; color: ' + (c === 'ok' ? '#5EEAD4' : '#F2B66D');
+    const factDefs = [
+      ['STORAGE', '64 GB', 'Plenty', 'ok', 78, '41 GB free for your files'],
+      ['MEMORY', '4 GB', 'Enough', 'ok', 50, 'Fits a small assistant model'],
+      ['BATTERY HEALTH', '82%', 'Good', 'ok', 82, 'Fine to leave plugged in on a shelf'],
+      ['CHIP', '8 cores', 'Good', 'ok', 0, 'Fast enough for local answers'],
+      ['ANDROID', '12', 'Old', 'warn', 0, 'No more security updates from the maker'],
+      ['BOOTLOADER', 'Locked', 'Check', 'warn', 0, 'Can be unlocked on this model (maker\'s guide)']
+    ];
+    const facts = factDefs.map((f, i) => ({ track: 'height: 6px; border-radius: 99px; background: #1E2638; overflow: hidden; display: ' + (f[4] ? 'block' : 'none'), name: f[0], value: f[1], tag: f[2], tagStyle: tag(f[3]), note: f[5], cls: 'gx-up gx-d' + (i + 1), bar: 'display: block; height: 100%; width: ' + f[4] + '%; background: ' + (f[3] === 'warn' ? '#F2B66D' : 'linear-gradient(90deg, #5EEAD4, #818CF8)') }));
+    const netOk = st.net === 'yes';
+    const offerDefs = [
+      ['files', 'Home files', 'Your own private storage. Reach it from your computer with an access code.', 92, 'Great'],
+      ['asst', 'AI assistant: on the phone', 'Llama 3.2 1B runs on the phone itself. Works with no internet.', 64, 'Good', true],
+      ['cloud', 'AI assistant: cloud', 'Meta\'s Muse Spark Open answers in the cloud. Needs internet. Runs on Baseten with your own key.', netOk ? 85 : 0, netOk ? 'Great' : 'Needs internet', true],
+    ];
+    const offers = offerDefs.map((o, i) => {
+      const on = st.svc[o[0]] && o[3] > 0;
+      return {
+        title: o[1], sub: o[2], fitLabel: o[4], cls: 'gx-up gx-d' + (i + 1), adv: !!o[5],
+        toggle: () => { if (o[3] === 0) return; const s = Object.assign({}, st.svc); s[o[0]] = !s[o[0]]; this.setState({ svc: s }); },
+        style: 'min-height: 180px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 20px; border-radius: 16px; font-family: inherit; color: #E6EAF2; cursor: ' + (o[3] === 0 ? 'not-allowed' : 'pointer') + '; opacity: ' + (o[3] === 0 ? '.5' : '1') + '; border: 1px solid ' + (on ? '#5EEAD4' : '#1E2638') + '; background: ' + (on ? 'rgba(94,234,212,.08)' : 'rgba(15,22,40,.85)'),
+        tick: 'width: 28px; height: 28px; border-radius: 99px; display: grid; place-items: center; font-weight: 700; background: ' + (on ? '#5EEAD4' : '#1E2638') + '; color: ' + (on ? '#06080F' : '#8A94AB'),
+        mark: on ? '✓' : '+',
+        fit: 'display: block; height: 100%; width: ' + o[3] + '%; background: linear-gradient(90deg, #5EEAD4, #818CF8)'
+      };
+    });
+    const findDefs = [
+      ['Changed your build: on-phone model size', '4 GB of memory, so the on-phone assistant uses Llama 3.2 1B, not 3B.', 'Source: Llama 3.2 model card ↗', true],
+      ['Unlocking the bootloader', 'The maker documents an unlock tool for this model.', 'Source: maker\'s developer page ↗', true],
+      ['New system base', 'Use a standard Android base and add only your apps.', 'Source: Android open source docs', true],
+      ['Offline assistant model', 'A 1B model fits in 4 GB of memory.', 'Source: model card', true],
+      ['Wi-Fi on the new system', 'Couldn\'t confirm from a trusted source.', 'Unknown: we test it after install', false]
+    ];
+    const finds = findDefs.map((r, i) => ({
+      title: r[0], detail: r[1], src: r[2], cls: 'gx-up gx-d' + (i + 1),
+      dot: 'position: absolute; left: -6px; top: 4px; width: 11px; height: 11px; border-radius: 99px; background: ' + (r[3] ? '#5EEAD4' : '#F2B66D') + '; box-shadow: 0 0 0 4px #06080F',
+      srcStyle: 'align-self: flex-start; font-family: \'JetBrains Mono\', monospace; font-size: 11px; padding: 3px 8px; border-radius: 6px; background: ' + (r[3] ? '#13283A' : '#2A1F12') + '; color: ' + (r[3] ? '#5EEAD4' : '#F2B66D')
+    }));
+    const row = (s) => 'display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; font-size: 15px; background: ' + (s === 'now' ? 'rgba(94,234,212,.07)' : 'rgba(15,22,40,.85)') + '; border: 1px solid ' + (s === 'now' ? 'rgba(94,234,212,.4)' : '#1E2638') + '; color: ' + (s === 'todo' ? '#6F7A92' : '#E6EAF2');
+    const icon = (s) => s === 'now' ? 'flex: none; width: 20px; height: 20px; border-radius: 99px; border: 2px solid #1E2638; border-top-color: #5EEAD4; box-sizing: border-box; animation: gxSpin 1s linear infinite; font-size: 0' : 'flex: none; width: 20px; height: 20px; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: ' + (s === 'done' ? '#5EEAD4' : '#2A3550');
+    const stageList = (defs, idx) => defs.map((d, i) => { const s = i < idx ? 'done' : i === idx ? 'now' : 'todo'; return { title: d[0], meta: d[1], row: row(s), icon: icon(s), mark: s === 'done' ? '✓' : s === 'now' ? '' : '○' }; });
+    const stageDefs = [['Start from a clean Android base', '1.6 GB'], ['Add your chosen apps', '3 apps'], ['Add the offline model', '1.1 GB'], ['Check everything inside matches your choices', '42 checks'], ['Seal the build and record its fingerprint', 'SHA-256']];
+    const logs = ['> base image verified', '> apps added', '> model added, read-only', '> 42 / 42 checks passed', '> build EXAMPLE-0001 sealed'];
+    const emu = st.target === 'emu';
+    const fDefs = emu ? [['Start a fresh Android Emulator', 'wiped'], ['Load the new system image', '2.8 GB'], ['First start-up', ''], ['Check it matches the build', 'build ID'], ['Quick test: a file and an offline answer', '']] : [['Unlock the bootloader', 'confirm on phone'], ['Send the new system', '2.8 GB'], ['Write it to the phone', ''], ['First start-up', ''], ['Check it matches the build', '']];
+    const flashing = st.flash === 'running';
+    const filled = (on) => 'min-height: 48px; padding: 0 28px; border-radius: 12px; border: 0; font-family: inherit; font-size: 15px; font-weight: 700; cursor: ' + (on ? 'pointer' : 'not-allowed') + '; background: ' + (on ? 'linear-gradient(90deg, #5EEAD4, #818CF8)' : '#1E2638') + '; color: ' + (on ? '#06080F' : '#4E5870');
+    let label = 'Continue', enabled = true, act = () => this.go(st.step + 1);
+    switch (st.step) {
+      case 0: label = 'Get started'; break;
+      case 1:
+        if (st.conn === 'idle') { label = 'I\'ve plugged it in'; act = () => { this.setState({ conn: 'looking' }); this.t = setTimeout(() => this.setState({ conn: 'found' }), 2200); }; }
+        else if (st.conn === 'looking') { label = 'Looking…'; enabled = false; }
+        break;
+      case 2: enabled = !!st.goal; break;
+      case 4: enabled = ['files', 'asst'].some(k => st.svc[k]) || (st.svc.cloud && netOk); break;
+      case 6:
+        if (st.build < 0) { label = 'Build it'; act = () => this.runBuild(); }
+        else if (st.build < 5) { label = 'Building…'; enabled = false; }
+        break;
+      case 7:
+        if (st.flash === 'idle') { label = emu ? 'Boot it' : 'Erase and install'; enabled = emu || st.agree; act = () => this.runFlash(); }
+        else if (flashing) { label = emu ? 'Booting…' : 'Installing…'; enabled = false; }
+        else if (st.flash === 'error') { label = 'Retry'; act = () => this.runFlash(); }
+        break;
+      case 8: label = 'Start over'; act = () => { this.clear(); this.setState({ step: 0, conn: 'idle', goal: null, build: -1, flash: 'idle', fstage: -1, agree: false, target: 'emu' }); }; break;
+    }
+    const chosen = [st.svc.files && 'Home files', st.svc.asst && 'AI assistant (on the phone)', st.svc.cloud && netOk && 'AI assistant (cloud)'].filter(Boolean);
+    const busy = st.conn === 'looking' && st.step === 1 || (st.step === 6 && st.build >= 0 && st.build < 5) || (st.step === 7 && flashing);
+    const brandDefs = [['samsung', 'Samsung'], ['xiaomi', 'Xiaomi'], ['sony', 'Sony'], ['google', 'Google Pixel'], ['other', 'Something else']];
+    const brands = brandDefs.map(b => ({ name: b[1], style: chip(st.brand === b[0]) + '; min-height: 40px; font-size: 14px', pick: () => { if (this.t) clearTimeout(this.t); this.setState({ brand: b[0], help: 'looking' }); this.t = setTimeout(() => this.setState({ help: 'done' }), 1600); } }));
+    const helpMap = {
+      samsung: ['Open Settings, then About phone.', 'Tap Software information.', 'Tap Build number 7 times and enter your PIN.', 'Developer options now sits at the bottom of Settings.'],
+      xiaomi: ['Open Settings, then About phone.', 'Tap MIUI version 7 times.', 'Go back to Settings, then Additional settings.', 'Open Developer options and turn on USB debugging.'],
+      sony: ['Open Settings, then About phone.', 'Tap Build number 7 times.', 'Go to Settings, then System, then Advanced.', 'Open Developer options and turn on USB debugging.'],
+      google: ['Open Settings, then About phone.', 'Tap Build number 7 times.', 'Go to Settings, then System.', 'Open Developer options and turn on USB debugging.'],
+      other: ['Type your phone\'s exact model name.', 'We look up the maker\'s own instructions.', 'We show the steps with the source.', 'If we can\'t find them, we say so.']
+    };
+    const brandName = (brandDefs.find(b => b[0] === st.brand) || ['', 'your phone'])[1];
+    return {
+      helpClosed: st.help === 'closed', helpOpen: st.help !== 'closed', helpLooking: st.help === 'looking', helpDone: st.help === 'done',
+      openHelp: () => this.setState({ help: 'pick' }), closeHelp: () => { if (this.t) clearTimeout(this.t); this.setState({ help: 'closed', brand: null }); },
+      brands, brandName, helpSteps: helpMap[st.brand] || [],
+      segs,
+      s0: st.step === 0, s1: st.step === 1, s2: st.step === 2, s3: st.step === 3, s4: st.step === 4, s5: st.step === 5, s6: st.step === 6, s7: st.step === 7, s8: st.step === 8,
+      connIdle: st.conn === 'idle', connLooking: st.conn === 'looking', connFound: st.conn === 'found',
+      cableColor: st.conn === 'found' ? '#5EEAD4' : '#2A3550', phoneStroke: st.conn === 'found' ? '#5EEAD4' : '#2A3550',
+      goals, places, nets, facts, offers, finds,
+      stages: stageList(stageDefs, st.build),
+      buildBar: 'display: block; height: 100%; transition: width .8s ease; width: ' + (st.build < 0 ? 0 : Math.min(100, st.build * 20)) + '%; background: linear-gradient(90deg, #5EEAD4, #818CF8)',
+      logLines: st.build < 0 ? ['> ready when you are'] : logs.slice(0, Math.min(5, st.build + 1)),
+      emuIdle: st.flash === 'idle' && emu, phoneIdle: st.flash === 'idle' && !emu, phoneBusy: flashing && !emu,
+      pickEmu: () => this.setState({ target: 'emu' }), pickPhone: () => this.setState({ target: 'phone' }),
+      emuChip: chip(emu), phoneChip: chip(!emu),
+      installTitle: emu ? 'Boot it' : 'Install and first start-up',
+      doneTitle: emu ? 'Its new system works.' : 'Your phone has a new job.',
+      done1: emu ? 'Booted in the Android Emulator' : 'Started up on its new system',
+      done3: emu ? 'A test file arrived, and the assistant answered offline' : (chosen.length ? chosen.join(', ') + ' running' : 'Ready for services'),
+      doneNote: emu ? 'Nothing on your phone was changed. The same system is ready for the real phone when you are.' : 'It\'s now safe to unplug. Your files access code is on the phone\'s screen. Keep it private.',
+      flashIdle: st.flash === 'idle', flashBusy: flashing, flashError: st.flash === 'error', flashShowSteps: st.flash !== 'idle',
+      flashSub: st.flash === 'done' ? (emu ? 'Booted, checked and tested.' : 'Installed, started and checked.') : st.flash === 'error' ? 'Nothing is broken. Let\'s try again.' : flashing ? 'This takes a few minutes.' : 'Last step. Choose where to run it.',
+      fsteps: stageList(fDefs, st.fstage),
+      flashPct: st.flash === 'idle' ? 'Ready' : st.flash === 'error' ? 'Paused' : st.flash === 'done' ? '100%' : Math.round(st.fstage * 20) + '%',
+      flashStroke: st.flash === 'done' ? '#5EEAD4' : st.flash === 'error' ? '#F2B66D' : flashing ? '#818CF8' : '#2A3550',
+      cableColor2: st.flash === 'error' ? '#F2B66D' : '#5EEAD4',
+      simFail: () => { this.clear(); this.setState({ flash: 'error' }); },
+      toggleAgree: () => this.setState({ agree: !st.agree }),
+      agreeStyle: 'display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 4px; border: 0; background: transparent; color: #F2E6E6; font-family: inherit; font-size: 15px; cursor: pointer; text-align: left',
+      agreeBox: 'flex: none; width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; font-weight: 700; border: 1.5px solid ' + (st.agree ? '#F7A8A8' : '#6F5A5A') + '; background: ' + (st.agree ? '#F7A8A8' : 'transparent') + '; color: #06080F',
+      agreeMark: st.agree ? '✓' : '',
+      doneServices: chosen.length ? chosen.join(', ') + ' running' : 'Ready for services',
+      back: () => this.go(Math.max(0, st.step - 1)),
+      backStyle: 'min-height: 48px; padding: 0 22px; border-radius: 12px; border: 1px solid #1E2638; background: transparent; color: #A7B0C4; font-family: inherit; font-size: 15px; cursor: pointer; visibility: ' + (st.step === 0 || busy ? 'hidden' : 'visible'),
+      primary: () => { if (enabled) act(); },
+      primaryLabel: label, primaryStyle: filled(enabled)
+    };
+  }
+}
+</script>
+</body>
+</html>
